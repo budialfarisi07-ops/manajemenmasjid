@@ -18,11 +18,6 @@
   <!-- SheetJS (Excel) -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   
-  <!-- Firebase (Auth + Firestore) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -49,79 +44,6 @@
   </style>
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col md:flex-row">
-
-  <!-- ==================== LOGIN / DAFTAR SCREEN ==================== -->
-  <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-green-800 to-green-900 z-[300] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8">
-      <!-- Branding -->
-      <div class="flex flex-col items-center text-center mb-6">
-        <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center shadow-md ring-2 ring-green-100 mb-3">
-          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none">
-            <g fill="#15803d">
-              <rect x="2.2" y="13" width="1.8" height="8" rx="0.3"/>
-              <path d="M3.1 9.3 L4.3 12.5 L1.9 12.5 Z"/>
-              <rect x="20" y="13" width="1.8" height="8" rx="0.3"/>
-              <path d="M20.9 9.3 L22.1 12.5 L19.7 12.5 Z"/>
-              <rect x="5" y="17" width="14" height="4" rx="0.4"/>
-              <path d="M6.4 17 C6.4 11.8 9 9.2 12 9.2 C15 9.2 17.6 11.8 17.6 17 Z"/>
-              <rect x="11.6" y="6.4" width="0.8" height="3"/>
-            </g>
-            <circle cx="12" cy="5.9" r="1" fill="#f59e0b"/>
-          </svg>
-        </div>
-        <h1 class="font-extrabold text-lg uppercase tracking-wide text-gray-800">Manajemen Keuangan Masjid</h1>
-        <p class="text-xs text-gray-500 mt-1">Sistem Laporan Digital</p>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex bg-gray-100 rounded-lg p-1 mb-5">
-        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700">Masuk</button>
-        <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500">Daftar Masjid Baru</button>
-      </div>
-
-      <!-- Error / Info Message -->
-      <div id="authMessage" class="hidden mb-4 px-3 py-2 rounded-lg text-xs font-medium"></div>
-
-      <!-- LOGIN FORM -->
-      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Email</label>
-          <input type="email" id="loginEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Kata Sandi</label>
-          <input type="password" id="loginPassword" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="••••••••">
-        </div>
-        <button type="submit" id="loginSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Masuk</button>
-      </form>
-
-      <!-- REGISTER FORM -->
-      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3 hidden">
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Nama Masjid</label>
-          <input type="text" id="regMosqueName" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Masjid Al-Ikhlas">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Email</label>
-          <input type="email" id="regEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Kata Sandi</label>
-          <input type="password" id="regPassword" required minlength="6" class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Minimal 6 karakter">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Ulangi Kata Sandi</label>
-          <input type="password" id="regPasswordConfirm" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ulangi kata sandi">
-        </div>
-        <button type="submit" id="registerSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Daftar & Buat Akun Masjid</button>
-      </form>
-
-      <p class="text-center text-[11px] text-gray-400 mt-5">Data Anda tersimpan aman di cloud dan dapat diakses kapan saja setelah masuk.</p>
-    </div>
-  </div>
-
-  <!-- ==================== APP SHELL (tersembunyi sampai berhasil login) ==================== -->
-  <div id="appShell" class="hidden w-full">
 
   <!-- OVERLAY for Mobile Sidebar -->
   <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity"></div>
@@ -184,16 +106,8 @@
       </button>
     </nav>
     
-    <div class="p-4 border-t border-green-700">
-      <div class="flex items-center justify-between gap-2">
-        <div class="overflow-hidden">
-          <p id="sidebarUserEmail" class="text-xs font-medium text-green-100 truncate">-</p>
-          <p class="text-[10px] text-green-400">© 2026 Masjid Finance</p>
-        </div>
-        <button onclick="handleLogout()" title="Keluar" class="shrink-0 p-2 rounded-lg hover:bg-white/10 text-green-200 hover:text-white transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        </button>
-      </div>
+    <div class="p-4 border-t border-green-700 text-center text-xs text-green-300">
+      © 2026 Masjid Finance
     </div>
   </aside>
 
@@ -751,8 +665,6 @@
     </div>
   </main>
 
-  </div> <!-- /#appShell -->
-
   <!-- ==================== MODALS ==================== -->
   
   <!-- Transaction Modal -->
@@ -911,33 +823,6 @@
 
 
     <script>
-    // ==================== FIREBASE CONFIG ====================
-    // GANTI seluruh isi objek di bawah ini dengan config dari Firebase Console Anda:
-    // Project Settings -> Your apps -> (ikon web </>) -> firebaseConfig
-    const firebaseConfig = {
-      apiKey: "GANTI_DENGAN_API_KEY_ANDA",
-      authDomain: "GANTI_DENGAN_PROJECT_ID.firebaseapp.com",
-      projectId: "GANTI_DENGAN_PROJECT_ID",
-      storageBucket: "GANTI_DENGAN_PROJECT_ID.appspot.com",
-      messagingSenderId: "GANTI_DENGAN_SENDER_ID",
-      appId: "GANTI_DENGAN_APP_ID"
-    };
-
-    let firebaseReady = false;
-    let auth = null;
-    let db = null;
-    try {
-      firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.firestore();
-      firebaseReady = true;
-    } catch (e) {
-      console.error('Firebase belum dikonfigurasi dengan benar:', e);
-    }
-
-    let currentUser = null;
-    let currentMosqueId = null;
-
     // ==================== CONFIG & STATE ====================
     const STORAGE = {
       trans: 'masjid_v2_trans',
@@ -982,36 +867,10 @@
     let ramadhanEntries = [];
     let ramadhanMeta = { synced: false, syncedAt: null, syncedTransactionId: null, syncedTotal: 0 };
 
-    // ==================== AUTH: STATE GATE ====================
+    // ==================== INITIALIZATION ====================
     window.onload = () => {
-      if (!firebaseReady) {
-        showAuthMessage('Konfigurasi Firebase belum diisi. Hubungi pengelola aplikasi.', 'error');
-        return;
-      }
-
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          currentUser = user;
-          currentMosqueId = user.uid;
-          document.getElementById('sidebarUserEmail').textContent = user.email;
-
-          await migrateLocalDataToFirestoreIfNeeded();
-
-          document.getElementById('authScreen').classList.add('hidden');
-          const shell = document.getElementById('appShell');
-          shell.classList.remove('hidden');
-          shell.classList.add('flex', 'flex-col', 'md:flex-row');
-
-          loadData();
-          initApp();
-        } else {
-          currentUser = null;
-          currentMosqueId = null;
-          document.getElementById('appShell').classList.add('hidden');
-          document.getElementById('appShell').classList.remove('flex', 'flex-col', 'md:flex-row');
-          document.getElementById('authScreen').classList.remove('hidden');
-        }
-      });
+      loadData();
+      initApp();
 
       // Safety-save: simpan data sesaat sebelum browser ditutup
       window.addEventListener('beforeunload', () => {
@@ -1060,41 +919,9 @@
       } catch(e) { console.error(e); }
     }
     
-    function saveTrans() {
-      localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
-      syncCollectionToFirestore('transactions', transactions);
-    }
-    function saveCats() {
-      localStorage.setItem(STORAGE.cats, JSON.stringify(categories));
-      syncCollectionToFirestore('categories', categories);
-    }
-    function saveSettingsData() {
-      localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
-      if (db && currentMosqueId) {
-        db.collection('mosques').doc(currentMosqueId).set({ settings }, { merge: true }).catch(e => console.error('Sync settings gagal:', e));
-      }
-    }
-
-    // Menulis seluruh koleksi (transactions/categories) ke Firestore secara best-effort.
-    // Best-effort = kalau offline/gagal, tidak memblokir aplikasi; data lokal tetap jadi sumber utama untuk saat ini.
-    let syncDebounceTimers = {};
-    function syncCollectionToFirestore(collectionName, items) {
-      if (!db || !currentMosqueId) return;
-      clearTimeout(syncDebounceTimers[collectionName]);
-      syncDebounceTimers[collectionName] = setTimeout(async () => {
-        try {
-          const colRef = db.collection('mosques').doc(currentMosqueId).collection(collectionName);
-          const batch = db.batch();
-          items.forEach(item => {
-            if (!item.id) return;
-            batch.set(colRef.doc(item.id), item);
-          });
-          await batch.commit();
-        } catch (e) {
-          console.error(`Sync ${collectionName} ke Firestore gagal (akan dicoba lagi saat perubahan berikutnya):`, e);
-        }
-      }, 800);
-    }
+    function saveTrans() { localStorage.setItem(STORAGE.trans, JSON.stringify(transactions)); }
+    function saveCats() { localStorage.setItem(STORAGE.cats, JSON.stringify(categories)); }
+    function saveSettingsData() { localStorage.setItem(STORAGE.settings, JSON.stringify(settings)); }
 
     function initApp() {
       updateHeader();
@@ -2289,14 +2116,10 @@
     // ==================== RAMADHAN DASHBOARD ====================
     function saveRamadhan() {
       localStorage.setItem(STORAGE.ramadhan, JSON.stringify(ramadhanEntries));
-      syncCollectionToFirestore('ramadhan_entries', ramadhanEntries);
     }
 
     function saveRamadhanMeta() {
       localStorage.setItem(STORAGE.ramadhanMeta, JSON.stringify(ramadhanMeta));
-      if (db && currentMosqueId) {
-        db.collection('mosques').doc(currentMosqueId).set({ ramadhan_meta: ramadhanMeta }, { merge: true }).catch(e => console.error('Sync ramadhan_meta gagal:', e));
-      }
     }
 
     function initRamadhanEntriesIfEmpty() {
@@ -2524,150 +2347,6 @@
       setTimeout(() => t.classList.add('translate-x-full'), 3000);
     }
 
-    // ==================== AUTH: UI HELPERS ====================
-    function switchAuthTab(tab) {
-      const loginBtn = document.getElementById('tabLoginBtn');
-      const registerBtn = document.getElementById('tabRegisterBtn');
-      const loginForm = document.getElementById('loginForm');
-      const registerForm = document.getElementById('registerForm');
-      hideAuthMessage();
-
-      if (tab === 'login') {
-        loginBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700';
-        registerBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500';
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-      } else {
-        registerBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700';
-        loginBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500';
-        registerForm.classList.remove('hidden');
-        loginForm.classList.add('hidden');
-      }
-    }
-
-    function showAuthMessage(msg, type = 'error') {
-      const box = document.getElementById('authMessage');
-      box.textContent = msg;
-      box.className = `mb-4 px-3 py-2 rounded-lg text-xs font-medium ${type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`;
-      box.classList.remove('hidden');
-    }
-
-    function hideAuthMessage() {
-      document.getElementById('authMessage').classList.add('hidden');
-    }
-
-    function translateAuthError(code) {
-      const map = {
-        'auth/invalid-email': 'Format email tidak valid.',
-        'auth/user-not-found': 'Email belum terdaftar.',
-        'auth/wrong-password': 'Kata sandi salah.',
-        'auth/invalid-credential': 'Email atau kata sandi salah.',
-        'auth/email-already-in-use': 'Email ini sudah terdaftar. Silakan masuk.',
-        'auth/weak-password': 'Kata sandi minimal 6 karakter.',
-        'auth/network-request-failed': 'Koneksi internet bermasalah.'
-      };
-      return map[code] || 'Terjadi kesalahan. Silakan coba lagi.';
-    }
-
-    // ==================== AUTH: LOGIN ====================
-    async function handleLogin(event) {
-      event.preventDefault();
-      hideAuthMessage();
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      const btn = document.getElementById('loginSubmitBtn');
-
-      btn.disabled = true;
-      btn.textContent = 'Memproses...';
-      try {
-        await auth.signInWithEmailAndPassword(email, password);
-        // onAuthStateChanged akan menangani sisanya
-      } catch (e) {
-        showAuthMessage(translateAuthError(e.code));
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Masuk';
-      }
-    }
-
-    // ==================== AUTH: REGISTER ====================
-    async function handleRegister(event) {
-      event.preventDefault();
-      hideAuthMessage();
-      const mosqueName = document.getElementById('regMosqueName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const password = document.getElementById('regPassword').value;
-      const passwordConfirm = document.getElementById('regPasswordConfirm').value;
-      const btn = document.getElementById('registerSubmitBtn');
-
-      if (password !== passwordConfirm) {
-        showAuthMessage('Konfirmasi kata sandi tidak cocok.');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'Memproses...';
-      try {
-        const cred = await auth.createUserWithEmailAndPassword(email, password);
-        await db.collection('mosques').doc(cred.user.uid).set({
-          mosque_name: mosqueName,
-          created_at: new Date().toISOString(),
-          owner_email: email
-        });
-        // onAuthStateChanged akan menangani sisanya (termasuk migrasi data lokal jika ada)
-      } catch (e) {
-        showAuthMessage(translateAuthError(e.code));
-        btn.disabled = false;
-        btn.textContent = 'Daftar & Buat Akun Masjid';
-      }
-    }
-
-    // ==================== AUTH: LOGOUT ====================
-    async function handleLogout() {
-      if (!confirm('Yakin ingin keluar?')) return;
-      try {
-        await auth.signOut();
-        showToast('Berhasil keluar.', 'info');
-      } catch (e) {
-        showToast('Gagal keluar, coba lagi.', 'error');
-      }
-    }
-
-    // ==================== MIGRASI DATA LOKAL -> FIRESTORE (SEKALI SAJA PER AKUN) ====================
-    async function migrateLocalDataToFirestoreIfNeeded() {
-      const migrationFlagKey = `masjid_migrated_${currentMosqueId}`;
-      if (localStorage.getItem(migrationFlagKey) === 'true') return;
-
-      try {
-        const localTrans = JSON.parse(localStorage.getItem(STORAGE.trans) || '[]');
-        const localCats = JSON.parse(localStorage.getItem(STORAGE.cats) || '[]');
-        const localSettings = JSON.parse(localStorage.getItem(STORAGE.settings) || '{}');
-
-        const mosqueRef = db.collection('mosques').doc(currentMosqueId);
-        const batch = db.batch();
-
-        if (Object.keys(localSettings).length > 0) {
-          batch.set(mosqueRef, { settings: localSettings }, { merge: true });
-        }
-        localTrans.forEach(t => {
-          const ref = mosqueRef.collection('transactions').doc(t.id || undefined);
-          batch.set(ref, t);
-        });
-        localCats.forEach(c => {
-          const ref = mosqueRef.collection('categories').doc(c.id || undefined);
-          batch.set(ref, c);
-        });
-
-        await batch.commit();
-        localStorage.setItem(migrationFlagKey, 'true');
-        if (localTrans.length > 0 || localCats.length > 0) {
-          showToast(`Migrasi data lama berhasil (${localTrans.length} transaksi).`, 'success');
-        }
-      } catch (e) {
-        console.error('Migrasi data gagal:', e);
-        // Tidak menghentikan proses login — data lokal tetap aman & bisa dicoba migrasi lagi nanti
-      }
-    }
   </script>
 </body>
 </html>
