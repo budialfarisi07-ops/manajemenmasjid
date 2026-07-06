@@ -133,6 +133,7 @@
           <p id="mosqueAddressDisplay" class="text-gray-600 text-sm">Jl. Contoh No. 123, Kota</p>
         </div>
         <div class="flex gap-2 flex-wrap items-center">
+          <span id="sheetsSyncBadge" title="Status sinkronisasi Google Sheets" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-gray-50 text-gray-500 border-gray-200">⚪ Mode Lokal</span>
           <button onclick="openCategoryModal()" class="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition text-sm shadow-sm">
             Kelola Kategori
           </button>
@@ -662,6 +663,37 @@
         <h3 id="previewName" class="text-xl font-bold">Masjid Al-Ikhlas</h3>
         <p id="previewAddress" class="text-sm opacity-90 mt-1">Jl. Contoh No. 123, Kota</p>
       </div>
+
+      <!-- Google Sheets Sync -->
+      <div class="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2 border-b pb-2">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Sinkronisasi Google Sheets
+        </h2>
+        <p class="text-xs text-gray-500 -mt-2">Data tetap tersimpan di perangkat ini apa pun yang terjadi. Kolom di bawah ini hanya untuk menyalakan cadangan otomatis ke Google Sheets — boleh dikosongkan.</p>
+        <form onsubmit="saveSheetsConfig(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Web App URL</label>
+            <input type="url" id="settingSheetsUrl" placeholder="https://script.google.com/macros/s/xxx/exec" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Kode Akses Masjid</label>
+            <input type="text" id="settingSheetsCode" placeholder="Contoh: masjid-alikhlas-2026" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+          </div>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="submit" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-md text-sm">
+              Simpan Konfigurasi
+            </button>
+            <button type="button" onclick="testSheetsConnection()" class="px-6 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition text-sm">
+              Tes Koneksi
+            </button>
+            <button type="button" onclick="manualSyncNow()" class="px-6 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition text-sm">
+              Sinkron Sekarang
+            </button>
+          </div>
+        </form>
+        <p id="sheetsConfigStatus" class="text-xs font-medium"></p>
+      </div>
     </div>
   </main>
 
@@ -860,7 +892,9 @@
       mosque_address: 'Jl. Masjid Raya No. 1',
       city: 'Jakarta',
       ketua: 'H. Abdullah',
-      bendahara: 'Umar Bakri'
+      bendahara: 'Umar Bakri',
+      sheetsUrl: 'https://script.google.com/macros/s/AKfycbzdh-KXYGUzbCF-r6mt4XHs8uBS9AK_5vgoVL5jmZ1_5KW1EX1iQN6wl-4ZBdEo_-Q_hw/exec',
+      sheetsCode: 'masjid-baituljannah-karangbendo'
     };
     let currentFriday = getCurrentFriday();
     let chartInstances = {};
@@ -871,6 +905,7 @@
     window.onload = () => {
       loadData();
       initApp();
+      pullAndRefreshFromSheets(); // berjalan di belakang layar, tidak menunda tampilan awal
 
       // Safety-save: simpan data sesaat sebelum browser ditutup
       window.addEventListener('beforeunload', () => {
@@ -919,9 +954,181 @@
       } catch(e) { console.error(e); }
     }
     
-    function saveTrans() { localStorage.setItem(STORAGE.trans, JSON.stringify(transactions)); }
-    function saveCats() { localStorage.setItem(STORAGE.cats, JSON.stringify(categories)); }
-    function saveSettingsData() { localStorage.setItem(STORAGE.settings, JSON.stringify(settings)); }
+    function saveTrans() {
+      localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
+      pushCollectionToSheets('transactions', transactions);
+    }
+    function saveCats() {
+      localStorage.setItem(STORAGE.cats, JSON.stringify(categories));
+      pushCollectionToSheets('categories', categories);
+    }
+    function saveSettingsData() {
+      localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
+      pushSettingsToSheets(settings);
+    }
+
+    // ==================== GOOGLE SHEETS SYNC (opsional, tidak pernah memblokir aplikasi) ====================
+    function getSheetsConfig() {
+      return { url: (settings.sheetsUrl || '').trim(), code: (settings.sheetsCode || '').trim() };
+    }
+
+    function isSheetsConfigured() {
+      const cfg = getSheetsConfig();
+      return !!(cfg.url && cfg.code);
+    }
+
+    function setSyncStatus(status, customText) {
+      const badge = document.getElementById('sheetsSyncBadge');
+      if (!badge) return;
+      const map = {
+        connected: { text: '🟢 Tersambung', cls: 'bg-green-50 text-green-700 border-green-200' },
+        local:     { text: '⚪ Mode Lokal', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+        syncing:   { text: '🟡 Menyinkronkan...', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+        error:     { text: '🔴 Gagal Sinkron', cls: 'bg-red-50 text-red-700 border-red-200' }
+      };
+      const s = map[status] || map.local;
+      badge.textContent = customText || s.text;
+      badge.className = `hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${s.cls}`;
+    }
+
+    let sheetsSyncTimers = {};
+    function pushCollectionToSheets(collectionName, items) {
+      if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
+      clearTimeout(sheetsSyncTimers[collectionName]);
+      sheetsSyncTimers[collectionName] = setTimeout(async () => {
+        const cfg = getSheetsConfig();
+        setSyncStatus('syncing');
+        try {
+          const res = await fetch(cfg.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'saveCollection', code: cfg.code, collection: collectionName, items })
+          });
+          const data = await res.json();
+          setSyncStatus(data.success ? 'connected' : 'error');
+        } catch (e) {
+          console.error(`Sinkron ${collectionName} ke Google Sheets gagal (tidak masalah, data lokal tetap aman):`, e);
+          setSyncStatus('error');
+        }
+      }, 1000);
+    }
+
+    async function pushSettingsToSheets(settingsObj) {
+      if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
+      const cfg = getSheetsConfig();
+      try {
+        const res = await fetch(cfg.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveSettings', code: cfg.code, settings: settingsObj })
+        });
+        const data = await res.json();
+        setSyncStatus(data.success ? 'connected' : 'error');
+      } catch (e) {
+        console.error('Sinkron pengaturan ke Google Sheets gagal (tidak masalah, data lokal tetap aman):', e);
+        setSyncStatus('error');
+      }
+    }
+
+    async function pullAllFromSheets() {
+      if (!isSheetsConfigured()) { setSyncStatus('local'); return false; }
+      setSyncStatus('syncing');
+      try {
+        const cfg = getSheetsConfig();
+        const url = `${cfg.url}?action=getAll&code=${encodeURIComponent(cfg.code)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.success) { setSyncStatus('error'); return false; }
+
+        if (Array.isArray(data.data.transactions) && data.data.transactions.length > 0) {
+          transactions = data.data.transactions.map(t => ({ ...t, id: String(t.id), amount: Number(t.amount) || 0 }));
+          localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
+        }
+        if (Array.isArray(data.data.categories) && data.data.categories.length > 0) {
+          categories = data.data.categories.map(c => ({ ...c, id: String(c.id) }));
+          localStorage.setItem(STORAGE.cats, JSON.stringify(categories));
+        }
+        if (data.data.settings && Object.keys(data.data.settings).length > 0) {
+          settings = { ...settings, ...data.data.settings };
+          localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
+        }
+        if (Array.isArray(data.data.ramadhan_entries) && data.data.ramadhan_entries.length > 0) {
+          ramadhanEntries = data.data.ramadhan_entries.map(r => ({ ...r, id: String(r.id), malam: Number(r.malam), jumlah: Number(r.jumlah) || 0 }));
+          localStorage.setItem(STORAGE.ramadhan, JSON.stringify(ramadhanEntries));
+        }
+        setSyncStatus('connected');
+        return true;
+      } catch (e) {
+        console.error('Gagal mengambil data dari Google Sheets (memakai data lokal):', e);
+        setSyncStatus('error');
+        return false;
+      }
+    }
+
+    async function pullAndRefreshFromSheets() {
+      const success = await pullAllFromSheets();
+      if (success) {
+        try {
+          applyFilter();
+          updateSummary();
+          updateHeader();
+          renderDropdowns();
+        } catch (e) { /* halaman aktif mungkin tidak butuh refresh ini, aman diabaikan */ }
+      }
+    }
+
+    function saveSheetsConfig(e) {
+      e.preventDefault();
+      settings.sheetsUrl = document.getElementById('settingSheetsUrl').value.trim();
+      settings.sheetsCode = document.getElementById('settingSheetsCode').value.trim();
+      localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
+      showToast('Konfigurasi Google Sheets disimpan', 'success');
+      const statusEl = document.getElementById('sheetsConfigStatus');
+      statusEl.textContent = '';
+      pushSettingsToSheets(settings);
+    }
+
+    async function testSheetsConnection() {
+      const statusEl = document.getElementById('sheetsConfigStatus');
+      const url = document.getElementById('settingSheetsUrl').value.trim();
+      const code = document.getElementById('settingSheetsCode').value.trim();
+
+      if (!url || !code) {
+        statusEl.className = 'text-xs font-medium text-red-600';
+        statusEl.textContent = 'Isi Web App URL dan Kode Akses terlebih dahulu.';
+        return;
+      }
+
+      statusEl.className = 'text-xs font-medium text-amber-600';
+      statusEl.textContent = 'Menguji koneksi...';
+      try {
+        const res = await fetch(`${url}?action=getAll&code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        if (data.success) {
+          statusEl.className = 'text-xs font-medium text-green-600';
+          statusEl.textContent = `✅ Berhasil tersambung! (${(data.data.transactions || []).length} transaksi ditemukan di Sheets)`;
+        } else {
+          statusEl.className = 'text-xs font-medium text-red-600';
+          statusEl.textContent = `❌ Gagal: ${data.error || 'Kode akses salah atau URL tidak valid.'}`;
+        }
+      } catch (e) {
+        statusEl.className = 'text-xs font-medium text-red-600';
+        statusEl.textContent = '❌ Tidak bisa terhubung. Cek kembali URL dan koneksi internet.';
+      }
+    }
+
+    async function manualSyncNow() {
+      if (!isSheetsConfigured()) {
+        showToast('Isi dan simpan konfigurasi Google Sheets terlebih dahulu.', 'error');
+        return;
+      }
+      showToast('Menyinkronkan data...', 'info');
+      pushCollectionToSheets('transactions', transactions);
+      pushCollectionToSheets('categories', categories);
+      pushCollectionToSheets('ramadhan', ramadhanEntries);
+      await pushSettingsToSheets(settings);
+      showToast('Sinkronisasi selesai', 'success');
+    }
 
     function initApp() {
       updateHeader();
@@ -2116,6 +2323,7 @@
     // ==================== RAMADHAN DASHBOARD ====================
     function saveRamadhan() {
       localStorage.setItem(STORAGE.ramadhan, JSON.stringify(ramadhanEntries));
+      pushCollectionToSheets('ramadhan', ramadhanEntries);
     }
 
     function saveRamadhanMeta() {
@@ -2288,6 +2496,8 @@
       document.getElementById('settingCity').value = settings.city || '';
       document.getElementById('settingKetua').value = settings.ketua || '';
       document.getElementById('settingBendahara').value = settings.bendahara || '';
+      document.getElementById('settingSheetsUrl').value = settings.sheetsUrl || '';
+      document.getElementById('settingSheetsCode').value = settings.sheetsCode || '';
       updatePreview();
     }
     
