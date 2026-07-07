@@ -1748,6 +1748,7 @@
         description: document.getElementById('transDesc').value,
         category_id: selectedCategoryId,
         category_color: selectedCategory ? selectedCategory.color : null,
+        category_name: selectedCategory ? selectedCategory.name : null,
         fund_source: document.getElementById('transFundSource').value || null,
         notes: document.getElementById('transNotes').value,
       };
@@ -1927,15 +1928,16 @@
       
       data.forEach(t => {
         const cat = categories.find(c => c.id === t.category_id);
-        const name = cat ? cat.name : 'Lainnya';
+        const name = cat ? cat.name : (t.category_name || 'Lainnya');
         const color = t.category_color || (cat ? cat.color : '#cbd5e1');
+        const key = t.category_id || ('_uncategorized_' + t.type);
         
         if(t.type === 'income') {
-          if(!incData[name]) incData[name] = { val: 0, color };
-          incData[name].val += t.amount;
+          if(!incData[key]) incData[key] = { name, val: 0, color };
+          incData[key].val += t.amount;
         } else {
-          if(!expData[name]) expData[name] = { val: 0, color };
-          expData[name].val += t.amount;
+          if(!expData[key]) expData[key] = { name, val: 0, color };
+          expData[key].val += t.amount;
         }
       });
       
@@ -1947,7 +1949,7 @@
       const ctx = document.getElementById(canvasId).getContext('2d');
       if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
       
-      const labels = Object.keys(dataObj);
+      const labels = Object.values(dataObj).map(o => o.name);
       const values = Object.values(dataObj).map(o => o.val);
       const colors = Object.values(dataObj).map(o => o.color);
       const total = values.reduce((a,b) => a+b, 0);
