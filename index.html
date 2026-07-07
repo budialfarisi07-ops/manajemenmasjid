@@ -45,6 +45,92 @@
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col md:flex-row">
 
+  <!-- ==================== LOGIN / DAFTAR SCREEN ==================== -->
+  <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-green-800 to-green-900 z-[300] flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8 my-6">
+      <!-- Branding -->
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center shadow-md ring-2 ring-green-100 mb-3">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none">
+            <g fill="#15803d">
+              <rect x="2.2" y="13" width="1.8" height="8" rx="0.3"/>
+              <path d="M3.1 9.3 L4.3 12.5 L1.9 12.5 Z"/>
+              <rect x="20" y="13" width="1.8" height="8" rx="0.3"/>
+              <path d="M20.9 9.3 L22.1 12.5 L19.7 12.5 Z"/>
+              <rect x="5" y="17" width="14" height="4" rx="0.4"/>
+              <path d="M6.4 17 C6.4 11.8 9 9.2 12 9.2 C15 9.2 17.6 11.8 17.6 17 Z"/>
+              <rect x="11.6" y="6.4" width="0.8" height="3"/>
+            </g>
+            <circle cx="12" cy="5.9" r="1" fill="#f59e0b"/>
+          </svg>
+        </div>
+        <h1 class="font-extrabold text-lg uppercase tracking-wide text-gray-800">Manajemen Keuangan Masjid</h1>
+        <p class="text-xs text-gray-500 mt-1">Sistem Laporan Digital</p>
+      </div>
+
+      <!-- Identitas Masjid (Web App URL + Kode Akses) -->
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-5 space-y-3">
+        <p class="text-xs font-bold text-gray-600 uppercase">Identitas Masjid</p>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Web App URL (Google Sheets)</label>
+          <input type="url" id="authSheetsUrl" required class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs" placeholder="https://script.google.com/macros/s/xxx/exec">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Kode Akses Masjid</label>
+          <input type="password" id="authSheetsCode" required class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Kode dari pengurus/pengelola aplikasi">
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex bg-gray-100 rounded-lg p-1 mb-5">
+        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700">Masuk</button>
+        <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500">Daftar Akun Baru</button>
+      </div>
+
+      <!-- Error / Info Message -->
+      <div id="authMessage" class="hidden mb-4 px-3 py-2 rounded-lg text-xs font-medium"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Email</label>
+          <input type="email" id="loginEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Kata Sandi</label>
+          <input type="password" id="loginPassword" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="••••••••">
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Masuk</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3 hidden">
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Nama Lengkap</label>
+          <input type="text" id="regName" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Nama Anda">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Email</label>
+          <input type="email" id="regEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Buat Kata Sandi</label>
+          <input type="password" id="regPassword" required minlength="6" class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Minimal 6 karakter, bebas pilih sendiri">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-gray-600">Ulangi Kata Sandi</label>
+          <input type="password" id="regPasswordConfirm" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ulangi kata sandi">
+        </div>
+        <button type="submit" id="registerSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Daftar</button>
+      </form>
+
+      <p class="text-center text-[11px] text-gray-400 mt-5">Setelah masuk, device ini akan diingat — tidak perlu login ulang tiap buka aplikasi.</p>
+    </div>
+  </div>
+
+  <!-- ==================== APP SHELL (tersembunyi sampai berhasil login) ==================== -->
+  <div id="appShell" class="hidden w-full">
+
   <!-- OVERLAY for Mobile Sidebar -->
   <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity"></div>
 
@@ -96,7 +182,7 @@
         <p class="px-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-green-400">Program Khusus</p>
         <button onclick="showPage('ramadhan')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-green-100 hover:bg-white/10" data-page="ramadhan">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3c.5 2-1 3.5-1 6a4 4 0 008 0c1 3-1 8-6.5 8A6.5 6.5 0 016 10.5C6 7 8.5 5 12 3z"/></svg>
-          <span>Ramadhan</span>
+          <span>Dashboard Ramadhan</span>
         </button>
       </div>
       
@@ -106,8 +192,16 @@
       </button>
     </nav>
     
-    <div class="p-4 border-t border-green-700 text-center text-xs text-green-300">
-      © 2026 Masjid Finance
+    <div class="p-4 border-t border-green-700">
+      <div class="flex items-center justify-between gap-2">
+        <div class="overflow-hidden">
+          <p id="sidebarUserName" class="text-xs font-semibold text-green-100 truncate">-</p>
+          <p class="text-[10px] text-green-400">© 2026 Masjid Finance</p>
+        </div>
+        <button onclick="handleLogout()" title="Keluar" class="shrink-0 p-2 rounded-lg hover:bg-white/10 text-green-200 hover:text-white transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -548,7 +642,7 @@
         <div class="flex items-center gap-3">
           <svg class="w-8 h-8 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3c.5 2-1 3.5-1 6a4 4 0 008 0c1 3-1 8-6.5 8A6.5 6.5 0 016 10.5C6 7 8.5 5 12 3z"/></svg>
           <div>
-            <h1 class="text-xl md:text-2xl font-bold">Ramadhan</h1>
+            <h1 class="text-xl md:text-2xl font-bold">Dashboard Ramadhan</h1>
             <p class="text-amber-50 text-xs md:text-sm mt-0.5">Input infak sholat tarawih — terpisah dari laporan keuangan reguler</p>
           </div>
         </div>
@@ -696,6 +790,8 @@
       </div>
     </div>
   </main>
+
+  </div> <!-- /#appShell -->
 
   <!-- ==================== MODALS ==================== -->
   
@@ -861,7 +957,8 @@
       cats: 'masjid_v2_cats',
       settings: 'masjid_v2_settings',
       ramadhan: 'masjid_v2_ramadhan',
-      ramadhanMeta: 'masjid_v2_ramadhan_meta'
+      ramadhanMeta: 'masjid_v2_ramadhan_meta',
+      session: 'masjid_v2_session'
     };
     
     const DEFAULT_CATS = [
@@ -893,8 +990,8 @@
       city: 'Jakarta',
       ketua: 'H. Abdullah',
       bendahara: 'Umar Bakri',
-      sheetsUrl: 'https://script.google.com/macros/s/AKfycbzdh-KXYGUzbCF-r6mt4XHs8uBS9AK_5vgoVL5jmZ1_5KW1EX1iQN6wl-4ZBdEo_-Q_hw/exec',
-      sheetsCode: 'masjid-baituljannah-karangbendo'
+      sheetsUrl: '',
+      sheetsCode: ''
     };
     let currentFriday = getCurrentFriday();
     let chartInstances = {};
@@ -903,9 +1000,13 @@
 
     // ==================== INITIALIZATION ====================
     window.onload = () => {
-      loadData();
-      initApp();
-      pullAndRefreshFromSheets(); // berjalan di belakang layar, tidak menunda tampilan awal
+      const session = getStoredSession();
+      if (session && session.active) {
+        enterApp(session);
+      } else {
+        prefillAuthScreenFromSettings();
+        document.getElementById('authScreen').classList.remove('hidden');
+      }
 
       // Safety-save: simpan data sesaat sebelum browser ditutup
       window.addEventListener('beforeunload', () => {
@@ -926,6 +1027,176 @@
         }
       });
     };
+
+    // ==================== SESI LOGIN (tersimpan lokal per device) ====================
+    function getStoredSession() {
+      try {
+        const raw = localStorage.getItem(STORAGE.session);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function prefillAuthScreenFromSettings() {
+      try {
+        const raw = localStorage.getItem(STORAGE.settings);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.sheetsUrl) document.getElementById('authSheetsUrl').value = s.sheetsUrl;
+          if (s.sheetsCode) document.getElementById('authSheetsCode').value = s.sheetsCode;
+        }
+      } catch (e) {}
+    }
+
+    function enterApp(session) {
+      document.getElementById('authScreen').classList.add('hidden');
+      const shell = document.getElementById('appShell');
+      shell.classList.remove('hidden');
+      shell.classList.add('flex', 'flex-col', 'md:flex-row');
+      document.getElementById('sidebarUserName').textContent = session.name || session.email || '-';
+
+      loadData();
+      initApp();
+      pullAndRefreshFromSheets(); // berjalan di belakang layar, tidak menunda tampilan awal
+    }
+
+    function switchAuthTab(tab) {
+      const loginBtn = document.getElementById('tabLoginBtn');
+      const registerBtn = document.getElementById('tabRegisterBtn');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      hideAuthMessage();
+
+      if (tab === 'login') {
+        loginBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700';
+        registerBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500';
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+      } else {
+        registerBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700';
+        loginBtn.className = 'flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500';
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+      }
+    }
+
+    function showAuthMessage(msg, type = 'error') {
+      const box = document.getElementById('authMessage');
+      box.textContent = msg;
+      box.className = `mb-4 px-3 py-2 rounded-lg text-xs font-medium ${type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`;
+      box.classList.remove('hidden');
+    }
+
+    function hideAuthMessage() {
+      document.getElementById('authMessage').classList.add('hidden');
+    }
+
+    function getAuthIdentity() {
+      const url = document.getElementById('authSheetsUrl').value.trim();
+      const code = document.getElementById('authSheetsCode').value.trim();
+      return { url, code };
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      hideAuthMessage();
+      const { url, code } = getAuthIdentity();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginSubmitBtn');
+
+      if (!url || !code) {
+        showAuthMessage('Isi Web App URL dan Kode Akses Masjid terlebih dahulu.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Memproses...';
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'login', code, email, password })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          showAuthMessage(data.error || 'Email atau password salah.');
+          return;
+        }
+
+        settings.sheetsUrl = url;
+        settings.sheetsCode = code;
+        saveSettingsData();
+
+        const session = { active: true, email: data.email, name: data.name };
+        localStorage.setItem(STORAGE.session, JSON.stringify(session));
+        enterApp(session);
+      } catch (e) {
+        showAuthMessage('Tidak bisa terhubung. Cek kembali Web App URL dan koneksi internet Anda.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+      }
+    }
+
+    async function handleRegister(event) {
+      event.preventDefault();
+      hideAuthMessage();
+      const { url, code } = getAuthIdentity();
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+      const btn = document.getElementById('registerSubmitBtn');
+
+      if (!url || !code) {
+        showAuthMessage('Isi Web App URL dan Kode Akses Masjid terlebih dahulu.');
+        return;
+      }
+      if (password !== passwordConfirm) {
+        showAuthMessage('Konfirmasi kata sandi tidak cocok.');
+        return;
+      }
+      if (password.length < 6) {
+        showAuthMessage('Kata sandi minimal 6 karakter.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Memproses...';
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'registerUser', code, name, email, password })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          showAuthMessage(data.error || 'Pendaftaran gagal.');
+          return;
+        }
+
+        settings.sheetsUrl = url;
+        settings.sheetsCode = code;
+        saveSettingsData();
+
+        const session = { active: true, email: data.email, name: data.name };
+        localStorage.setItem(STORAGE.session, JSON.stringify(session));
+        enterApp(session);
+      } catch (e) {
+        showAuthMessage('Tidak bisa terhubung. Cek kembali Web App URL dan koneksi internet Anda.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Daftar';
+      }
+    }
+
+    function handleLogout() {
+      if (!confirm('Yakin ingin keluar? Anda perlu login lagi untuk membuka aplikasi ini di device ini.')) return;
+      localStorage.removeItem(STORAGE.session);
+      location.reload();
+    }
     
     function loadData() {
       // Test apakah localStorage benar-benar bisa ditulis dan dibaca
@@ -1154,7 +1425,7 @@
         }
       });
       
-      const titles = { dashboard: 'Dashboard', analytics: 'Dashboard Analitik', jumat: 'Laporan Jumat', ramadhan: 'Ramadhan', settings: 'Pengaturan' };
+      const titles = { dashboard: 'Dashboard', analytics: 'Dashboard Analitik', jumat: 'Laporan Jumat', ramadhan: 'Dashboard Ramadhan', settings: 'Pengaturan' };
       document.getElementById('mobileTitle').textContent = titles[pageId];
       
       if(window.innerWidth < 768) toggleSidebar(false);
@@ -2451,7 +2722,7 @@
         type: 'income',
         category_id: 'ramadhan-infak',
         fund_source: '',
-        notes: 'Hasil sinkronisasi otomatis dari Ramadhan'
+        notes: 'Hasil sinkronisasi otomatis dari Dashboard Ramadhan'
       });
       saveTrans();
 
