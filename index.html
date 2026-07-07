@@ -209,12 +209,17 @@
   <main class="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-[100vw] overflow-x-hidden">
     
     <!-- MOBILE HEADER (Hamburger + Title) -->
-    <div class="md:hidden flex items-center justify-between mb-6 bg-white p-3 rounded-xl shadow-sm sticky top-0 z-20">
-      <button onclick="toggleSidebar()" class="p-2 text-green-700 hover:bg-green-50 rounded-lg">
+    <div class="md:hidden flex items-center justify-between gap-2 mb-6 bg-white p-3 rounded-xl shadow-sm sticky top-0 z-20">
+      <button onclick="toggleSidebar()" class="p-2 text-green-700 hover:bg-green-50 rounded-lg shrink-0">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
-      <h2 id="mobileTitle" class="font-bold text-green-800 text-lg truncate px-2">Dashboard</h2>
-      <div class="w-8"></div> <!-- Spacer for balance -->
+      <h2 id="mobileTitle" class="font-bold text-green-800 text-lg truncate px-2 flex-1 text-center">Dashboard</h2>
+      <div class="flex items-center gap-1 shrink-0">
+        <span id="sheetsSyncBadgeMobile" title="Status sinkronisasi Google Sheets" class="text-base leading-none">⚪</span>
+        <button onclick="openCategoryModal()" title="Kelola Kategori" class="p-2 text-gray-500 hover:bg-gray-50 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+        </button>
+      </div>
     </div>
 
     <!-- ==================== DASHBOARD PAGE ==================== -->
@@ -1250,16 +1255,23 @@
 
     function setSyncStatus(status, customText) {
       const badge = document.getElementById('sheetsSyncBadge');
-      if (!badge) return;
+      const badgeMobile = document.getElementById('sheetsSyncBadgeMobile');
       const map = {
-        connected: { text: '🟢 Tersambung', cls: 'bg-green-50 text-green-700 border-green-200' },
-        local:     { text: '⚪ Mode Lokal', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
-        syncing:   { text: '🟡 Menyinkronkan...', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-        error:     { text: '🔴 Gagal Sinkron', cls: 'bg-red-50 text-red-700 border-red-200' }
+        connected: { text: '🟢 Tersambung', icon: '🟢', cls: 'bg-green-50 text-green-700 border-green-200' },
+        local:     { text: '⚪ Mode Lokal', icon: '⚪', cls: 'bg-gray-50 text-gray-500 border-gray-200' },
+        syncing:   { text: '🟡 Menyinkronkan...', icon: '🟡', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+        error:     { text: '🔴 Gagal Sinkron', icon: '🔴', cls: 'bg-red-50 text-red-700 border-red-200' }
       };
       const s = map[status] || map.local;
-      badge.textContent = customText || s.text;
-      badge.className = `hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${s.cls}`;
+
+      if (badge) {
+        badge.textContent = customText || s.text;
+        badge.className = `hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${s.cls}`;
+      }
+      if (badgeMobile) {
+        badgeMobile.textContent = s.icon;
+        badgeMobile.title = customText || s.text;
+      }
     }
 
     let sheetsSyncTimers = {};
