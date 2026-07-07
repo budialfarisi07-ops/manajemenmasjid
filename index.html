@@ -1013,12 +1013,18 @@
         document.getElementById('authScreen').classList.remove('hidden');
       }
 
-      // Safety-save: simpan data sesaat sebelum browser ditutup
+      // Safety-save: simpan ke penyimpanan lokal saja sesaat sebelum tab ditutup/refresh.
+      // PENTING: sengaja TIDAK memanggil saveTrans()/saveCats()/saveSettingsData() di sini,
+      // karena fungsi itu juga mengirim data ke Google Sheets — kalau device ini sedang
+      // menyimpan data LAMA (belum sempat menarik pembaruan dari device lain), pengiriman
+      // saat halaman ditutup bisa menimpa balik data yang lebih baru dari Sheets dengan
+      // data lama tadi. Sinkron ke Sheets sudah otomatis terjadi tiap kali ada perubahan
+      // nyata (tambah/edit/hapus), jadi tidak perlu diulang lagi di sini.
       window.addEventListener('beforeunload', () => {
         try {
-          saveTrans();
-          saveCats();
-          saveSettingsData();
+          localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
+          localStorage.setItem(STORAGE.cats, JSON.stringify(categories));
+          localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
         } catch(e) {}
       });
       
