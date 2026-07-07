@@ -733,7 +733,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Kota / Lokasi Cetak</label>
               <input type="text" id="settingCity" placeholder="Contoh: Jakarta" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" required>
-              <p class="text-xs text-gray-500 mt-1">Akan muncul di teks: "[Kota], [Tanggal]"</p>
+              <p class="text-xs text-gray-500 mt-1">Akan muncul di teks: "Dibuat di [Kota], [Tanggal]"</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1721,13 +1721,16 @@
     function saveTransaction(e) {
       e.preventDefault();
       const id = document.getElementById('editTransId').value;
+      const selectedCategoryId = document.getElementById('transCategory').value;
+      const selectedCategory = categories.find(c => c.id === selectedCategoryId);
       const data = {
         id: id || Date.now().toString(),
         type: document.getElementById('transType').value,
         date: document.getElementById('transDate').value,
         amount: parseFloat(document.getElementById('transAmount').value),
         description: document.getElementById('transDesc').value,
-        category_id: document.getElementById('transCategory').value,
+        category_id: selectedCategoryId,
+        category_color: selectedCategory ? selectedCategory.color : null,
         fund_source: document.getElementById('transFundSource').value || null,
         notes: document.getElementById('transNotes').value,
       };
@@ -1908,7 +1911,7 @@
       data.forEach(t => {
         const cat = categories.find(c => c.id === t.category_id);
         const name = cat ? cat.name : 'Lainnya';
-        const color = cat ? cat.color : '#cbd5e1';
+        const color = t.category_color || (cat ? cat.color : '#cbd5e1');
         
         if(t.type === 'income') {
           if(!incData[name]) incData[name] = { val: 0, color };
