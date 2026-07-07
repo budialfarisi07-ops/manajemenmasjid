@@ -1324,7 +1324,12 @@
         if (!data.success) { setSyncStatus('error'); return false; }
 
         if (Array.isArray(data.data.transactions) && data.data.transactions.length > 0) {
-          transactions = data.data.transactions.map(t => ({ ...t, id: String(t.id), amount: Number(t.amount) || 0 }));
+          transactions = data.data.transactions.map(t => ({
+            ...t,
+            id: String(t.id),
+            category_id: (t.category_id !== undefined && t.category_id !== null && t.category_id !== '') ? String(t.category_id) : '',
+            amount: Number(t.amount) || 0
+          }));
           localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
         }
         if (Array.isArray(data.data.categories) && data.data.categories.length > 0) {
