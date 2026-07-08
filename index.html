@@ -68,61 +68,81 @@
         <p class="text-xs text-gray-500 mt-1">Sistem Laporan Digital</p>
       </div>
 
-      <!-- Identitas Masjid (Web App URL + Kode Akses) -->
-      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-5 space-y-3">
-        <p class="text-xs font-bold text-gray-600 uppercase">Identitas Masjid</p>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Web App URL (Google Sheets)</label>
-          <input type="url" id="authSheetsUrl" required class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs" placeholder="https://script.google.com/macros/s/xxx/exec">
+      <!-- ==================== STEP 1: AKTIVASI LISENSI ==================== -->
+      <div id="licenseStep">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-5">
+          <p class="text-xs font-bold text-amber-700 uppercase mb-1">🔑 Aktivasi Lisensi</p>
+          <p class="text-xs text-amber-700">Isi sekali saja saat pertama kali. Kode Lisensi didapat dari penjual aplikasi.</p>
         </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Kode Akses Masjid</label>
-          <input type="password" id="authSheetsCode" required class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Kode dari pengurus/pengelola aplikasi">
-        </div>
+
+        <div id="licenseMessage" class="hidden mb-4 px-3 py-2 rounded-lg text-xs font-medium"></div>
+
+        <form id="licenseForm" onsubmit="handleActivateLicense(event)" class="space-y-3">
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Nama Masjid</label>
+            <input type="text" id="licenseMosqueName" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Masjid Al-Ikhlas">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Email Penanggung Jawab</label>
+            <input type="email" id="licenseEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Web App URL (dari Google Sheets Anda sendiri)</label>
+            <input type="url" id="licenseWebAppUrl" required class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs" placeholder="https://script.google.com/macros/s/xxx/exec">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Kode Lisensi</label>
+            <input type="text" id="licenseCode" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm uppercase" placeholder="MJD-XXXX-XXXX-XXXX">
+          </div>
+          <button type="submit" id="licenseSubmitBtn" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-sm transition mt-2">Aktivasi</button>
+        </form>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex bg-gray-100 rounded-lg p-1 mb-5">
-        <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700">Masuk</button>
-        <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500">Daftar Akun Baru</button>
+      <!-- ==================== STEP 2: MASUK / DAFTAR ==================== -->
+      <div id="loginStep" class="hidden">
+        <!-- Tabs -->
+        <div class="flex bg-gray-100 rounded-lg p-1 mb-5">
+          <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-md text-sm font-semibold transition bg-white shadow text-green-700">Masuk</button>
+          <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 rounded-md text-sm font-semibold transition text-gray-500">Daftar Akun Baru</button>
+        </div>
+
+        <!-- Error / Info Message -->
+        <div id="authMessage" class="hidden mb-4 px-3 py-2 rounded-lg text-xs font-medium"></div>
+
+        <!-- LOGIN FORM -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Email</label>
+            <input type="email" id="loginEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Kata Sandi</label>
+            <input type="password" id="loginPassword" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="••••••••">
+          </div>
+          <button type="submit" id="loginSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Masuk</button>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3 hidden">
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Nama Lengkap</label>
+            <input type="text" id="regName" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Nama Anda">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Email</label>
+            <input type="email" id="regEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Buat Kata Sandi</label>
+            <input type="password" id="regPassword" required minlength="6" class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Minimal 6 karakter, bebas pilih sendiri">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-600">Ulangi Kata Sandi</label>
+            <input type="password" id="regPasswordConfirm" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ulangi kata sandi">
+          </div>
+          <button type="submit" id="registerSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Daftar</button>
+        </form>
       </div>
-
-      <!-- Error / Info Message -->
-      <div id="authMessage" class="hidden mb-4 px-3 py-2 rounded-lg text-xs font-medium"></div>
-
-      <!-- LOGIN FORM -->
-      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Email</label>
-          <input type="email" id="loginEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Kata Sandi</label>
-          <input type="password" id="loginPassword" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="••••••••">
-        </div>
-        <button type="submit" id="loginSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Masuk</button>
-      </form>
-
-      <!-- REGISTER FORM -->
-      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3 hidden">
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Nama Lengkap</label>
-          <input type="text" id="regName" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Nama Anda">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Email</label>
-          <input type="email" id="regEmail" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="bendahara@masjid.id">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Buat Kata Sandi</label>
-          <input type="password" id="regPassword" required minlength="6" class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Minimal 6 karakter, bebas pilih sendiri">
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-gray-600">Ulangi Kata Sandi</label>
-          <input type="password" id="regPasswordConfirm" required class="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ulangi kata sandi">
-        </div>
-        <button type="submit" id="registerSubmitBtn" class="w-full py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-semibold text-sm transition mt-2">Daftar</button>
-      </form>
 
       <p class="text-center text-[11px] text-gray-400 mt-5">Setelah masuk, device ini akan diingat — tidak perlu login ulang tiap buka aplikasi.</p>
     </div>
@@ -765,15 +785,11 @@
           <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Sinkronisasi Google Sheets
         </h2>
-        <p class="text-xs text-gray-500 -mt-2">Data tetap tersimpan di perangkat ini apa pun yang terjadi. Kolom di bawah ini hanya untuk menyalakan cadangan otomatis ke Google Sheets — boleh dikosongkan.</p>
+        <p class="text-xs text-gray-500 -mt-2">Web App URL diisi otomatis saat aktivasi lisensi. Data tetap tersimpan di perangkat ini apa pun yang terjadi.</p>
         <form onsubmit="saveSheetsConfig(event)" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Web App URL</label>
             <input type="url" id="settingSheetsUrl" placeholder="https://script.google.com/macros/s/xxx/exec" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Kode Akses Masjid</label>
-            <input type="text" id="settingSheetsCode" placeholder="Contoh: masjid-alikhlas-2026" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
           </div>
           <div class="flex flex-wrap gap-2 pt-1">
             <button type="submit" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-md text-sm">
@@ -959,8 +975,12 @@
       settings: 'masjid_v2_settings',
       ramadhan: 'masjid_v2_ramadhan',
       ramadhanMeta: 'masjid_v2_ramadhan_meta',
-      session: 'masjid_v2_session'
+      session: 'masjid_v2_session',
+      license: 'masjid_v2_license'
     };
+
+    // Server Lisensi Pusat — HANYA dikontrol oleh penjual aplikasi, buyer tidak pernah menyentuh ini
+    const CENTRAL_LICENSE_URL = 'https://script.google.com/macros/s/AKfycbyztNnRJVD0GCLMh20PedreiMtPFjlfzo-r90H7F2-KEo2ToQGABIc1_87MyYXp_e2j/exec';
     
     const DEFAULT_CATS = [
       { id: 'c1', name: 'Infak Umum', type: 'income', color: '#22c55e' },
@@ -991,8 +1011,7 @@
       city: 'Jakarta',
       ketua: 'H. Abdullah',
       bendahara: 'Umar Bakri',
-      sheetsUrl: '',
-      sheetsCode: ''
+      sheetsUrl: ''
     };
     let currentFriday = getCurrentFriday();
     let chartInstances = {};
@@ -1005,8 +1024,14 @@
       if (session && session.active) {
         enterApp(session);
       } else {
-        prefillAuthScreenFromSettings();
-        document.getElementById('authScreen').classList.remove('hidden');
+        const license = getStoredLicense();
+        if (license && license.activated && license.webAppUrl) {
+          // Lisensi sudah pernah diaktivasi di device ini sebelumnya -> langsung ke Masuk/Daftar
+          settings.sheetsUrl = license.webAppUrl;
+          showLoginStep();
+        } else {
+          document.getElementById('authScreen').classList.remove('hidden');
+        }
       }
 
       // Safety-save: simpan ke penyimpanan lokal saja sesaat sebelum tab ditutup/refresh.
@@ -1035,23 +1060,72 @@
       });
     };
 
+    // ==================== AKTIVASI LISENSI (sekali per device, terkunci ke 1 Web App URL) ====================
+    function getStoredLicense() {
+      try {
+        const raw = localStorage.getItem(STORAGE.license);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function showLoginStep() {
+      document.getElementById('licenseStep').classList.add('hidden');
+      document.getElementById('loginStep').classList.remove('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+    }
+
+    function showLicenseMessage(msg, type = 'error') {
+      const box = document.getElementById('licenseMessage');
+      box.textContent = msg;
+      box.className = `mb-4 px-3 py-2 rounded-lg text-xs font-medium ${type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`;
+      box.classList.remove('hidden');
+    }
+
+    async function handleActivateLicense(event) {
+      event.preventDefault();
+      const mosqueName = document.getElementById('licenseMosqueName').value.trim();
+      const email = document.getElementById('licenseEmail').value.trim();
+      const webAppUrl = document.getElementById('licenseWebAppUrl').value.trim();
+      const code = document.getElementById('licenseCode').value.trim().toUpperCase();
+      const btn = document.getElementById('licenseSubmitBtn');
+
+      if (!mosqueName || !email || !webAppUrl || !code) {
+        showLicenseMessage('Semua kolom wajib diisi.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Memverifikasi...';
+      try {
+        const res = await fetch(CENTRAL_LICENSE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'activateLicense', code, mosque_name: mosqueName, email, web_app_url: webAppUrl })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          showLicenseMessage(data.error || 'Aktivasi gagal.');
+          return;
+        }
+
+        localStorage.setItem(STORAGE.license, JSON.stringify({ activated: true, code, webAppUrl }));
+        settings.sheetsUrl = webAppUrl;
+        showLoginStep();
+      } catch (e) {
+        showLicenseMessage('Tidak bisa terhubung ke server lisensi. Cek koneksi internet Anda.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Aktivasi';
+      }
+    }
+
     // ==================== SESI LOGIN (tersimpan lokal per device) ====================
     function getStoredSession() {
       try {
         const raw = localStorage.getItem(STORAGE.session);
         return raw ? JSON.parse(raw) : null;
       } catch (e) { return null; }
-    }
-
-    function prefillAuthScreenFromSettings() {
-      try {
-        const raw = localStorage.getItem(STORAGE.settings);
-        if (raw) {
-          const s = JSON.parse(raw);
-          if (s.sheetsUrl) document.getElementById('authSheetsUrl').value = s.sheetsUrl;
-          if (s.sheetsCode) document.getElementById('authSheetsCode').value = s.sheetsCode;
-        }
-      } catch (e) {}
     }
 
     function enterApp(session) {
@@ -1097,22 +1171,16 @@
       document.getElementById('authMessage').classList.add('hidden');
     }
 
-    function getAuthIdentity() {
-      const url = document.getElementById('authSheetsUrl').value.trim();
-      const code = document.getElementById('authSheetsCode').value.trim();
-      return { url, code };
-    }
-
     async function handleLogin(event) {
       event.preventDefault();
       hideAuthMessage();
-      const { url, code } = getAuthIdentity();
+      const url = (settings.sheetsUrl || '').trim();
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const btn = document.getElementById('loginSubmitBtn');
 
-      if (!url || !code) {
-        showAuthMessage('Isi Web App URL dan Kode Akses Masjid terlebih dahulu.');
+      if (!url) {
+        showAuthMessage('Lisensi belum teraktivasi. Silakan muat ulang halaman.');
         return;
       }
 
@@ -1122,7 +1190,7 @@
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'login', code, email, password })
+          body: JSON.stringify({ action: 'login', email, password })
         });
         const data = await res.json();
 
@@ -1131,15 +1199,13 @@
           return;
         }
 
-        settings.sheetsUrl = url;
-        settings.sheetsCode = code;
         saveSettingsData();
 
         const session = { active: true, email: data.email, name: data.name };
         localStorage.setItem(STORAGE.session, JSON.stringify(session));
         enterApp(session);
       } catch (e) {
-        showAuthMessage('Tidak bisa terhubung. Cek kembali Web App URL dan koneksi internet Anda.');
+        showAuthMessage('Tidak bisa terhubung. Cek kembali koneksi internet Anda.');
       } finally {
         btn.disabled = false;
         btn.textContent = 'Masuk';
@@ -1149,15 +1215,15 @@
     async function handleRegister(event) {
       event.preventDefault();
       hideAuthMessage();
-      const { url, code } = getAuthIdentity();
+      const url = (settings.sheetsUrl || '').trim();
       const name = document.getElementById('regName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
       const password = document.getElementById('regPassword').value;
       const passwordConfirm = document.getElementById('regPasswordConfirm').value;
       const btn = document.getElementById('registerSubmitBtn');
 
-      if (!url || !code) {
-        showAuthMessage('Isi Web App URL dan Kode Akses Masjid terlebih dahulu.');
+      if (!url) {
+        showAuthMessage('Lisensi belum teraktivasi. Silakan muat ulang halaman.');
         return;
       }
       if (password !== passwordConfirm) {
@@ -1175,7 +1241,7 @@
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'registerUser', code, name, email, password })
+          body: JSON.stringify({ action: 'registerUser', name, email, password })
         });
         const data = await res.json();
 
@@ -1184,8 +1250,6 @@
           return;
         }
 
-        settings.sheetsUrl = url;
-        settings.sheetsCode = code;
         saveSettingsData();
 
         const session = { active: true, email: data.email, name: data.name };
@@ -1247,12 +1311,12 @@
 
     // ==================== GOOGLE SHEETS SYNC (opsional, tidak pernah memblokir aplikasi) ====================
     function getSheetsConfig() {
-      return { url: (settings.sheetsUrl || '').trim(), code: (settings.sheetsCode || '').trim() };
+      return { url: (settings.sheetsUrl || '').trim() };
     }
 
     function isSheetsConfigured() {
       const cfg = getSheetsConfig();
-      return !!(cfg.url && cfg.code);
+      return !!cfg.url;
     }
 
     function setSyncStatus(status, customText) {
@@ -1287,7 +1351,7 @@
           const res = await fetch(cfg.url, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'saveCollection', code: cfg.code, collection: collectionName, items })
+            body: JSON.stringify({ action: 'saveCollection', collection: collectionName, items })
           });
           const data = await res.json();
           setSyncStatus(data.success ? 'connected' : 'error');
@@ -1305,7 +1369,7 @@
         const res = await fetch(cfg.url, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveSettings', code: cfg.code, settings: settingsObj })
+          body: JSON.stringify({ action: 'saveSettings', settings: settingsObj })
         });
         const data = await res.json();
         setSyncStatus(data.success ? 'connected' : 'error');
@@ -1320,7 +1384,7 @@
       setSyncStatus('syncing');
       try {
         const cfg = getSheetsConfig();
-        const url = `${cfg.url}?action=getAll&code=${encodeURIComponent(cfg.code)}`;
+        const url = `${cfg.url}?action=getAll`;
         const res = await fetch(url);
         const data = await res.json();
         if (!data.success) { setSyncStatus('error'); return false; }
@@ -1370,7 +1434,6 @@
     function saveSheetsConfig(e) {
       e.preventDefault();
       settings.sheetsUrl = document.getElementById('settingSheetsUrl').value.trim();
-      settings.sheetsCode = document.getElementById('settingSheetsCode').value.trim();
       localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
       showToast('Konfigurasi Google Sheets disimpan', 'success');
       const statusEl = document.getElementById('sheetsConfigStatus');
@@ -1381,25 +1444,24 @@
     async function testSheetsConnection() {
       const statusEl = document.getElementById('sheetsConfigStatus');
       const url = document.getElementById('settingSheetsUrl').value.trim();
-      const code = document.getElementById('settingSheetsCode').value.trim();
 
-      if (!url || !code) {
+      if (!url) {
         statusEl.className = 'text-xs font-medium text-red-600';
-        statusEl.textContent = 'Isi Web App URL dan Kode Akses terlebih dahulu.';
+        statusEl.textContent = 'Isi Web App URL terlebih dahulu.';
         return;
       }
 
       statusEl.className = 'text-xs font-medium text-amber-600';
       statusEl.textContent = 'Menguji koneksi...';
       try {
-        const res = await fetch(`${url}?action=getAll&code=${encodeURIComponent(code)}`);
+        const res = await fetch(`${url}?action=getAll`);
         const data = await res.json();
         if (data.success) {
           statusEl.className = 'text-xs font-medium text-green-600';
           statusEl.textContent = `✅ Berhasil tersambung! (${(data.data.transactions || []).length} transaksi ditemukan di Sheets)`;
         } else {
           statusEl.className = 'text-xs font-medium text-red-600';
-          statusEl.textContent = `❌ Gagal: ${data.error || 'Kode akses salah atau URL tidak valid.'}`;
+          statusEl.textContent = `❌ Gagal: ${data.error || 'URL tidak valid.'}`;
         }
       } catch (e) {
         statusEl.className = 'text-xs font-medium text-red-600';
@@ -2784,7 +2846,6 @@
       document.getElementById('settingKetua').value = settings.ketua || '';
       document.getElementById('settingBendahara').value = settings.bendahara || '';
       document.getElementById('settingSheetsUrl').value = settings.sheetsUrl || '';
-      document.getElementById('settingSheetsCode').value = settings.sheetsCode || '';
       updatePreview();
     }
     
