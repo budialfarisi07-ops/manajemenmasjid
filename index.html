@@ -393,10 +393,6 @@
                   📂 Restore dari File
                   <input type="file" accept=".json" onchange="restoreFromJSON(event)" class="hidden">
                 </label>
-                <div class="border-t my-1"></div>
-                <button onclick="backupToGoogleDrive()" class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-green-50 rounded flex items-center gap-2">
-                  ☁️ Backup ke Google Drive
-                </button>
               </div>
             </div>
           </div>
@@ -1955,9 +1951,10 @@
       const ctx = document.getElementById(canvasId).getContext('2d');
       if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
       
-      const labels = Object.values(dataObj).map(o => o.name);
-      const values = Object.values(dataObj).map(o => o.val);
-      const colors = Object.values(dataObj).map(o => o.color);
+      const sortedEntries = Object.values(dataObj).sort((a, b) => a.val - b.val);
+      const labels = sortedEntries.map(o => o.name);
+      const values = sortedEntries.map(o => o.val);
+      const colors = sortedEntries.map(o => o.color);
       const total = values.reduce((a,b) => a+b, 0);
       
       chartInstances[canvasId] = new Chart(ctx, {
@@ -2509,15 +2506,6 @@
       closeRekapModal();
     }
     
-    function backupToGoogleDrive() {
-      // Membuat file Excel laporan sesuai filter periode yang sedang aktif di aplikasi (pakai logika export yang sama)
-      exportExcel();
-      // Buka Google Drive di tab baru agar file yang baru diunduh bisa langsung diunggah/disimpan
-      window.open('https://drive.google.com/drive/my-drive', '_blank');
-      showToast('File Excel berhasil diunduh. Silakan upload/drag file tersebut ke tab Google Drive yang baru terbuka.', 'success');
-      document.getElementById('backupMenu').classList.add('hidden');
-    }
-
     function exportExcel() {
       const data = getFilteredData();
       const startDate = document.getElementById('filterStartDate').value;
