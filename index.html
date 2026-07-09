@@ -1298,11 +1298,11 @@
     
     function saveTrans() {
       localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
-      pushCollectionToSheets('transactions', transactions);
+      pushCollectionToSheets('transactions');
     }
     function saveCats() {
       localStorage.setItem(STORAGE.cats, JSON.stringify(categories));
-      pushCollectionToSheets('categories', categories);
+      pushCollectionToSheets('categories');
     }
     function saveSettingsData() {
       localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
@@ -1341,10 +1341,34 @@
     }
 
     let sheetsSyncTimers = {};
-    function pushCollectionToSheets(collectionName, items) {
+    function getCurrentCollectionData(collectionName) {
+      if (collectionName === 'transactions') return transactions;
+      if (collectionName === 'categories') return categories;
+      if (collectionName === 'ramadhan') return ramadhanEntries;
+      return [];
+    }
+
+    function pushCollectionToSheets(collectionName) {
       if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
+
       clearTimeout(sheetsSyncTimers[collectionName]);
       sheetsSyncTimers[collectionName] = setTimeout(async () => {
+        // PENTING: ambil data TERKINI di sini, tepat saat pengiriman benar-benar jalan --
+        // bukan data yang "dibekukan" 1 detik lalu saat pengiriman ini pertama dijadwalkan.
+        // Ini mencegah data lama (misal kategori sementara sebelum data asli sempat ditarik
+        // dari Sheets) menimpa balik data baru yang sudah benar masuk di detik-detik terakhir.
+        const items = getCurrentCollectionData(collectionName);
+
+        // Pengaman: saveCollection di Apps Script menimpa SELURUH isi sheet (bukan per-baris).
+        // Kategori pada penggunaan nyata praktis tidak pernah benar-benar kosong -- kalau ini
+        // terjadi, kemungkinan besar itu gejala bug sesaat (race condition/loading), bukan
+        // keinginan sengaja menghapus semua kategori. Tolak pengiriman supaya tidak diam-diam
+        // menghapus seluruh data kategori yang sudah tersimpan di Sheets.
+        if (collectionName === 'categories' && (!items || items.length === 0)) {
+          console.warn('Menolak mengirim daftar kategori KOSONG ke Google Sheets (mencegah kemungkinan penghapusan data tidak sengaja). Muat ulang halaman kalau kategori memang seharusnya ada isinya.');
+          return;
+        }
+
         const cfg = getSheetsConfig();
         setSyncStatus('syncing');
         try {
@@ -1475,9 +1499,9 @@
         return;
       }
       showToast('Menyinkronkan data...', 'info');
-      pushCollectionToSheets('transactions', transactions);
-      pushCollectionToSheets('categories', categories);
-      pushCollectionToSheets('ramadhan', ramadhanEntries);
+      pushCollectionToSheets('transactions');
+      pushCollectionToSheets('categories');
+      pushCollectionToSheets('ramadhan');
       await pushSettingsToSheets(settings);
       showToast('Sinkronisasi selesai', 'success');
     }
@@ -2672,7 +2696,7 @@
     // ==================== RAMADHAN DASHBOARD ====================
     function saveRamadhan() {
       localStorage.setItem(STORAGE.ramadhan, JSON.stringify(ramadhanEntries));
-      pushCollectionToSheets('ramadhan', ramadhanEntries);
+      pushCollectionToSheets('ramadhan');
     }
 
     function saveRamadhanMeta() {
