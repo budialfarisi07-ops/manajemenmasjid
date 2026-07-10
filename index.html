@@ -1418,6 +1418,7 @@
             ...t,
             id: String(t.id),
             category_id: (t.category_id !== undefined && t.category_id !== null && t.category_id !== '') ? String(t.category_id) : '',
+            fund_source: (t.fund_source !== undefined && t.fund_source !== null && t.fund_source !== '') ? String(t.fund_source) : null,
             amount: Number(t.amount) || 0
           }));
           localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
