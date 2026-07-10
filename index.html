@@ -1293,6 +1293,13 @@
         if (s) settings = { ...settings, ...JSON.parse(s) };
         if (r) ramadhanEntries = JSON.parse(r);
         if (rm) ramadhanMeta = { ...ramadhanMeta, ...JSON.parse(rm) };
+
+        // Catat jumlah data yang sudah dikenal aman sejak awal sesi ini -- supaya pengaman
+        // "tolak kirim data kosong" langsung aktif dari awal, tidak perlu menunggu aktivitas
+        // dalam sesi ini dulu baru "belajar" jumlah data yang benar.
+        lastNonEmptyCollectionCount.transactions = transactions.length;
+        lastNonEmptyCollectionCount.categories = categories.length;
+        lastNonEmptyCollectionCount.ramadhan = ramadhanEntries.length;
       } catch(e) { console.error(e); }
     }
     
@@ -1341,6 +1348,7 @@
     }
 
     let sheetsSyncTimers = {};
+    let lastNonEmptyCollectionCount = {};
     function getCurrentCollectionData(collectionName) {
       if (collectionName === 'transactions') return transactions;
       if (collectionName === 'categories') return categories;
@@ -1360,13 +1368,18 @@
         const items = getCurrentCollectionData(collectionName);
 
         // Pengaman: saveCollection di Apps Script menimpa SELURUH isi sheet (bukan per-baris).
-        // Kategori pada penggunaan nyata praktis tidak pernah benar-benar kosong -- kalau ini
-        // terjadi, kemungkinan besar itu gejala bug sesaat (race condition/loading), bukan
-        // keinginan sengaja menghapus semua kategori. Tolak pengiriman supaya tidak diam-diam
-        // menghapus seluruh data kategori yang sudah tersimpan di Sheets.
-        if (collectionName === 'categories' && (!items || items.length === 0)) {
-          console.warn('Menolak mengirim daftar kategori KOSONG ke Google Sheets (mencegah kemungkinan penghapusan data tidak sengaja). Muat ulang halaman kalau kategori memang seharusnya ada isinya.');
+        // Data yang sudah pernah terisi (transaksi, kategori, Ramadhan) pada penggunaan nyata
+        // praktis tidak pernah tiba-tiba menjadi benar-benar kosong -- kalau ini terjadi,
+        // kemungkinan besar itu gejala bug sesaat (race condition/loading), bukan keinginan
+        // sengaja menghapus semuanya. Tolak pengiriman kalau ada indikasi data hilang tiba-tiba,
+        // supaya tidak diam-diam menghapus data asli yang sudah tersimpan di Sheets.
+        const lastKnownCount = lastNonEmptyCollectionCount[collectionName] || 0;
+        if ((!items || items.length === 0) && lastKnownCount > 0) {
+          console.warn(`Menolak mengirim daftar ${collectionName} KOSONG ke Google Sheets (sebelumnya ada ${lastKnownCount} data -- mencegah kemungkinan penghapusan data tidak sengaja). Muat ulang halaman kalau data ini memang seharusnya dikosongkan.`);
           return;
+        }
+        if (items && items.length > 0) {
+          lastNonEmptyCollectionCount[collectionName] = items.length;
         }
 
         const cfg = getSheetsConfig();
@@ -1422,10 +1435,12 @@
             amount: Number(t.amount) || 0
           }));
           localStorage.setItem(STORAGE.trans, JSON.stringify(transactions));
+          lastNonEmptyCollectionCount.transactions = transactions.length;
         }
         if (Array.isArray(data.data.categories) && data.data.categories.length > 0) {
           categories = data.data.categories.map(c => ({ ...c, id: String(c.id) }));
           localStorage.setItem(STORAGE.cats, JSON.stringify(categories));
+          lastNonEmptyCollectionCount.categories = categories.length;
         }
         if (data.data.settings && Object.keys(data.data.settings).length > 0) {
           settings = { ...settings, ...data.data.settings };
@@ -1434,6 +1449,7 @@
         if (Array.isArray(data.data.ramadhan_entries) && data.data.ramadhan_entries.length > 0) {
           ramadhanEntries = data.data.ramadhan_entries.map(r => ({ ...r, id: String(r.id), malam: Number(r.malam), jumlah: Number(r.jumlah) || 0 }));
           localStorage.setItem(STORAGE.ramadhan, JSON.stringify(ramadhanEntries));
+          lastNonEmptyCollectionCount.ramadhan = ramadhanEntries.length;
         }
         setSyncStatus('connected');
         return true;
