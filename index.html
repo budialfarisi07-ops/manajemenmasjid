@@ -901,7 +901,7 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div id="importTypeFieldWrapper">
               <label class="block text-xs font-semibold text-gray-600 mb-1">Jenis Transaksi</label>
               <select id="importType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
                 <option value="income">Semua Pemasukan</option>
@@ -2850,6 +2850,7 @@
     
     // ==================== IMPORT DATA EXCEL (laporan lama) ====================
     let importParsedRows = [];
+    let importMode = ''; // 'single' (1 kolom Nominal) atau 'separate' (kolom Pemasukan + Pengeluaran terpisah)
 
     function openImportModal() {
       resetImportModal();
@@ -2866,6 +2867,7 @@
       document.getElementById('importFileInput').value = '';
       document.getElementById('importFileError').classList.add('hidden');
       importParsedRows = [];
+      importMode = '';
     }
 
     function showImportError(msg) {
@@ -2952,20 +2954,49 @@
 
       const dateCol = findImportColumn(headers, ['tanggal', 'tgl', 'date']);
       const descCol = findImportColumn(headers, ['keterangan', 'deskripsi', 'description', 'uraian', 'catatan']);
+      const incomeCol = findImportColumn(headers, ['pemasukan', 'penerimaan', 'masuk', 'income']);
+      const expenseCol = findImportColumn(headers, ['pengeluaran', 'keluar', 'expense']);
       const amountCol = findImportColumn(headers, ['nominal', 'jumlah', 'amount', 'nilai']);
 
-      if (!dateCol || !descCol || !amountCol) {
-        showImportError(`Tidak bisa menemukan kolom yang dibutuhkan (Tanggal/Keterangan/Nominal). Kolom yang ditemukan di file: ${headers.join(', ')}.`);
+      if (!dateCol || !descCol) {
+        showImportError(`Tidak bisa menemukan kolom Tanggal dan/atau Keterangan. Kolom yang ditemukan di file: ${headers.join(', ')}.`);
         return;
       }
 
-      const parsed = rows
-        .map(row => ({
-          date: parseImportDate(row[dateCol]),
-          description: String(row[descCol] || '').trim(),
-          amount: parseImportAmount(row[amountCol])
-        }))
-        .filter(r => r.date && r.description && r.amount !== null && r.amount !== 0);
+      let parsed = [];
+
+      if (incomeCol && expenseCol) {
+        // Format: Tanggal - Keterangan - Pemasukan - Pengeluaran (2 kolom terpisah)
+        importMode = 'separate';
+        rows.forEach(row => {
+          const date = parseImportDate(row[dateCol]);
+          const description = String(row[descCol] || '').trim();
+          if (!date || !description) return;
+
+          const incomeAmt = parseImportAmount(row[incomeCol]);
+          const expenseAmt = parseImportAmount(row[expenseCol]);
+
+          if (incomeAmt && incomeAmt !== 0) {
+            parsed.push({ date, description, amount: Math.abs(incomeAmt), type: 'income' });
+          }
+          if (expenseAmt && expenseAmt !== 0) {
+            parsed.push({ date, description, amount: Math.abs(expenseAmt), type: 'expense' });
+          }
+        });
+      } else if (amountCol) {
+        // Format: Tanggal - Keterangan - Nominal (1 kolom, boleh bertanda +/-)
+        importMode = 'single';
+        parsed = rows
+          .map(row => ({
+            date: parseImportDate(row[dateCol]),
+            description: String(row[descCol] || '').trim(),
+            amount: parseImportAmount(row[amountCol])
+          }))
+          .filter(r => r.date && r.description && r.amount !== null && r.amount !== 0);
+      } else {
+        showImportError(`Tidak ditemukan kolom Nominal, ataupun kolom Pemasukan + Pengeluaran. Kolom yang ditemukan di file: ${headers.join(', ')}.`);
+        return;
+      }
 
       if (parsed.length === 0) {
         showImportError('Tidak ada baris data valid yang bisa dibaca. Pastikan format tanggal & nominal wajar.');
@@ -2980,17 +3011,29 @@
       document.getElementById('importStep1').classList.add('hidden');
       document.getElementById('importStep2').classList.remove('hidden');
 
-      document.getElementById('importSummaryText').textContent = `✅ ${importParsedRows.length} baris transaksi berhasil terbaca dari file.`;
+      const modeNote = importMode === 'separate'
+        ? ' Jenis transaksi (Pemasukan/Pengeluaran) terdeteksi otomatis dari kolom terpisah di file Anda.'
+        : '';
+      document.getElementById('importSummaryText').textContent = `✅ ${importParsedRows.length} baris transaksi berhasil terbaca dari file.${modeNote}`;
       document.getElementById('importTotalRows').textContent = importParsedRows.length;
 
+      document.getElementById('importTypeFieldWrapper').classList.toggle('hidden', importMode === 'separate');
+
       const tbody = document.getElementById('importPreviewBody');
-      tbody.innerHTML = importParsedRows.slice(0, 5).map(r => `
+      tbody.innerHTML = importParsedRows.slice(0, 5).map(r => {
+        const badge = importMode === 'separate'
+          ? (r.type === 'income'
+              ? ' <span class="text-green-600 font-semibold">(Masuk)</span>'
+              : ' <span class="text-red-600 font-semibold">(Keluar)</span>')
+          : '';
+        return `
         <tr>
           <td class="px-3 py-2 whitespace-nowrap">${formatDate(r.date)}</td>
           <td class="px-3 py-2">${r.description}</td>
-          <td class="px-3 py-2 text-right whitespace-nowrap">${formatRupiah(Math.abs(r.amount))}</td>
+          <td class="px-3 py-2 text-right whitespace-nowrap">${formatRupiah(Math.abs(r.amount))}${badge}</td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
 
       const catOptions = '<option value="">Tanpa Kategori</option>' +
         categories.map(c => `<option value="${c.id}">${c.name} (${c.type === 'income' ? 'Pemasukan' : 'Pengeluaran'})</option>`).join('');
@@ -3008,7 +3051,9 @@
       const selectedCategory = categoryId ? categories.find(c => c.id === categoryId) : null;
 
       const newTransactions = importParsedRows.map((r, idx) => {
-        const txType = type === 'auto' ? (r.amount < 0 ? 'expense' : 'income') : type;
+        const txType = importMode === 'separate'
+          ? r.type
+          : (type === 'auto' ? (r.amount < 0 ? 'expense' : 'income') : type);
 
         return {
           id: `import-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
