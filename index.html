@@ -852,12 +852,102 @@
         </form>
         <p id="sheetsConfigStatus" class="text-xs font-medium"></p>
       </div>
+
+      <!-- Import Data Excel (laporan lama) -->
+      <div class="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <h2 class="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2 border-b pb-2">
+          <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>
+          Import Transaksi dari Excel
+        </h2>
+        <p class="text-xs text-gray-500 -mt-2">Untuk memasukkan laporan bulan/tahun sebelumnya yang masih dalam bentuk Excel — cocok walau file lama Anda cuma punya kolom Tanggal, Keterangan, dan Nominal saja (tanpa Kategori/Akad).</p>
+        <button type="button" onclick="openImportModal()" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-md text-sm flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>
+          Import dari File Excel
+        </button>
+      </div>
     </div>
   </main>
 
   </div> <!-- /#appShell -->
 
   <!-- ==================== MODALS ==================== -->
+  
+  <!-- Import Excel Modal -->
+  <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
+        <h3 class="text-lg font-bold text-gray-800">Import Transaksi dari Excel</h3>
+        <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-5">
+        <!-- STEP 1: Upload -->
+        <div id="importStep1">
+          <p class="text-sm text-gray-600 mb-3">Pilih file Excel (.xlsx/.xls) atau CSV. Sistem otomatis mengenali kolom <strong>Tanggal</strong>, <strong>Keterangan</strong>, dan <strong>Nominal</strong> — walau nama kolomnya sedikit berbeda (misal "Tgl", "Deskripsi", "Jumlah").</p>
+          <label class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:border-green-400 hover:bg-green-50 transition">
+            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/></svg>
+            <span class="text-sm font-medium text-gray-600">Klik untuk pilih file, atau seret file ke sini</span>
+            <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" onchange="handleImportFileSelect(event)" class="hidden">
+          </label>
+          <p id="importFileError" class="hidden text-xs text-red-600 mt-2"></p>
+        </div>
+
+        <!-- STEP 2: Preview & Konfigurasi -->
+        <div id="importStep2" class="hidden space-y-4">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-800">
+            <span id="importSummaryText" class="font-medium"></span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Jenis Transaksi</label>
+              <select id="importType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                <option value="income">Semua Pemasukan</option>
+                <option value="expense">Semua Pengeluaran</option>
+                <option value="auto">Deteksi Otomatis (angka minus = Pengeluaran)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Kategori Default (opsional)</label>
+              <select id="importCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"></select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Akad/Dana Default (opsional)</label>
+            <select id="importFundSource" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"></select>
+          </div>
+          <p class="text-xs text-gray-500">Kategori & Akad/Dana boleh dikosongkan dulu — bisa diedit satu-satu nanti dari tabel transaksi.</p>
+
+          <div>
+            <p class="text-xs font-semibold text-gray-600 mb-2">Pratinjau (5 baris pertama dari <span id="importTotalRows">0</span> baris):</p>
+            <div class="overflow-x-auto border rounded-lg">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-gray-50 text-gray-600 font-semibold border-b">
+                  <tr>
+                    <th class="px-3 py-2">Tanggal</th>
+                    <th class="px-3 py-2">Keterangan</th>
+                    <th class="px-3 py-2 text-right">Nominal</th>
+                  </tr>
+                </thead>
+                <tbody id="importPreviewBody" class="divide-y"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button onclick="confirmImport()" id="importConfirmBtn" class="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition">
+              Import Semua Transaksi
+            </button>
+            <button onclick="resetImportModal()" class="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium text-sm transition">
+              Pilih File Lain
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <!-- Transaction Modal -->
   <div id="transactionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -1615,7 +1705,6 @@
       if (success) {
         try {
           applyFilter();
-          updateSummary();
           updateHeader();
           renderDropdowns();
         } catch (e) { /* halaman aktif mungkin tidak butuh refresh ini, aman diabaikan */ }
@@ -2759,6 +2848,190 @@
       closeRekapModal();
     }
     
+    // ==================== IMPORT DATA EXCEL (laporan lama) ====================
+    let importParsedRows = [];
+
+    function openImportModal() {
+      resetImportModal();
+      document.getElementById('importModal').classList.remove('hidden');
+    }
+
+    function closeImportModal() {
+      document.getElementById('importModal').classList.add('hidden');
+    }
+
+    function resetImportModal() {
+      document.getElementById('importStep1').classList.remove('hidden');
+      document.getElementById('importStep2').classList.add('hidden');
+      document.getElementById('importFileInput').value = '';
+      document.getElementById('importFileError').classList.add('hidden');
+      importParsedRows = [];
+    }
+
+    function showImportError(msg) {
+      const el = document.getElementById('importFileError');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function handleImportFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('importFileError').classList.add('hidden');
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+          if (!rows || rows.length === 0) {
+            showImportError('File kosong atau tidak terbaca. Pastikan baris pertama berisi nama kolom (header).');
+            return;
+          }
+
+          processImportedRows(rows);
+        } catch (err) {
+          showImportError('Gagal membaca file: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function findImportColumn(headers, patterns) {
+      return headers.find(h => patterns.some(p => String(h).toLowerCase().trim().includes(p)));
+    }
+
+    function parseImportDate(value) {
+      if (!value) return null;
+      if (value instanceof Date && !isNaN(value)) {
+        return toLocalDateStr(value);
+      }
+
+      const str = String(value).trim();
+
+      // Format YYYY-MM-DD atau YYYY/MM/DD
+      let m = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+
+      // Format DD-MM-YYYY atau DD/MM/YYYY (umum dipakai laporan Indonesia)
+      m = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+      if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+
+      // Jaring pengaman terakhir: coba parser tanggal bawaan browser
+      const d = new Date(str);
+      if (!isNaN(d)) return toLocalDateStr(d);
+
+      return null;
+    }
+
+    function parseImportAmount(value) {
+      if (value === null || value === undefined || value === '') return null;
+      if (typeof value === 'number') return value;
+
+      let str = String(value).trim();
+      const isNegative = /^-/.test(str) || /^\(.*\)$/.test(str); // dukung juga gaya akuntansi "(500.000)"
+
+      // Buang semua karakter selain digit, titik, koma (misal "Rp", spasi)
+      str = str.replace(/[^\d.,]/g, '');
+      // Format Indonesia: titik = pemisah ribuan (dibuang), koma = desimal (jadi titik)
+      str = str.replace(/\./g, '').replace(',', '.');
+
+      const num = parseFloat(str);
+      if (isNaN(num)) return null;
+
+      return isNegative ? -Math.abs(num) : Math.abs(num);
+    }
+
+    function processImportedRows(rows) {
+      const headers = Object.keys(rows[0]);
+
+      const dateCol = findImportColumn(headers, ['tanggal', 'tgl', 'date']);
+      const descCol = findImportColumn(headers, ['keterangan', 'deskripsi', 'description', 'uraian', 'catatan']);
+      const amountCol = findImportColumn(headers, ['nominal', 'jumlah', 'amount', 'nilai']);
+
+      if (!dateCol || !descCol || !amountCol) {
+        showImportError(`Tidak bisa menemukan kolom yang dibutuhkan (Tanggal/Keterangan/Nominal). Kolom yang ditemukan di file: ${headers.join(', ')}.`);
+        return;
+      }
+
+      const parsed = rows
+        .map(row => ({
+          date: parseImportDate(row[dateCol]),
+          description: String(row[descCol] || '').trim(),
+          amount: parseImportAmount(row[amountCol])
+        }))
+        .filter(r => r.date && r.description && r.amount !== null && r.amount !== 0);
+
+      if (parsed.length === 0) {
+        showImportError('Tidak ada baris data valid yang bisa dibaca. Pastikan format tanggal & nominal wajar.');
+        return;
+      }
+
+      importParsedRows = parsed;
+      renderImportPreview();
+    }
+
+    function renderImportPreview() {
+      document.getElementById('importStep1').classList.add('hidden');
+      document.getElementById('importStep2').classList.remove('hidden');
+
+      document.getElementById('importSummaryText').textContent = `✅ ${importParsedRows.length} baris transaksi berhasil terbaca dari file.`;
+      document.getElementById('importTotalRows').textContent = importParsedRows.length;
+
+      const tbody = document.getElementById('importPreviewBody');
+      tbody.innerHTML = importParsedRows.slice(0, 5).map(r => `
+        <tr>
+          <td class="px-3 py-2 whitespace-nowrap">${formatDate(r.date)}</td>
+          <td class="px-3 py-2">${r.description}</td>
+          <td class="px-3 py-2 text-right whitespace-nowrap">${formatRupiah(Math.abs(r.amount))}</td>
+        </tr>
+      `).join('');
+
+      const catOptions = '<option value="">Tanpa Kategori</option>' +
+        categories.map(c => `<option value="${c.id}">${c.name} (${c.type === 'income' ? 'Pemasukan' : 'Pengeluaran'})</option>`).join('');
+      document.getElementById('importCategory').innerHTML = catOptions;
+
+      const fundOptions = '<option value="">Tanpa Akad/Dana</option>' +
+        categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('importFundSource').innerHTML = fundOptions;
+    }
+
+    function confirmImport() {
+      const type = document.getElementById('importType').value;
+      const categoryId = document.getElementById('importCategory').value;
+      const fundSourceId = document.getElementById('importFundSource').value;
+      const selectedCategory = categoryId ? categories.find(c => c.id === categoryId) : null;
+
+      const newTransactions = importParsedRows.map((r, idx) => {
+        const txType = type === 'auto' ? (r.amount < 0 ? 'expense' : 'income') : type;
+
+        return {
+          id: `import-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+          date: r.date,
+          description: r.description,
+          amount: Math.abs(r.amount),
+          type: txType,
+          category_id: categoryId || '',
+          category_color: selectedCategory ? selectedCategory.color : null,
+          category_name: selectedCategory ? selectedCategory.name : null,
+          fund_source: fundSourceId || null,
+          notes: 'Hasil import dari Excel'
+        };
+      });
+
+      transactions = transactions.concat(newTransactions);
+      saveTrans();
+
+      closeImportModal();
+      applyFilter();
+      showToast(`✅ Berhasil import ${newTransactions.length} transaksi dari Excel!`, 'success');
+    }
+
     function exportExcel() {
       const data = getFilteredData();
       const startDate = document.getElementById('filterStartDate').value;
