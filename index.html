@@ -382,7 +382,7 @@
             <div>
               <label class="block text-xs font-semibold text-gray-500 mb-1">Kategori Pengeluaran</label>
               <select id="filterExpenseCategory" onchange="applyFilter()" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 text-sm outline-none">
-                <option value="">Semua Kategori Pengeluaran</option>
+                <option value="">Semua Kategori</option>
               </select>
             </div>
             
@@ -2155,7 +2155,7 @@
       const filterExpenseCatSelect = document.getElementById('filterExpenseCategory');
       const currFilterExpenseCat = filterExpenseCatSelect.value;
       const expenseCats = categories.filter(c => c.type === 'expense');
-      filterExpenseCatSelect.innerHTML = '<option value="">Semua Kategori Pengeluaran</option>' + expenseCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      filterExpenseCatSelect.innerHTML = '<option value="">Semua Kategori</option>' + expenseCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
       if(currFilterExpenseCat) filterExpenseCatSelect.value = currFilterExpenseCat;
     }
     
