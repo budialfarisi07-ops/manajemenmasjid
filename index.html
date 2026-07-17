@@ -681,10 +681,25 @@
       <div class="bg-white rounded-xl shadow-sm overflow-hidden">
         <div class="p-4 border-b flex justify-between items-center">
           <h2 class="font-bold text-gray-800">Detail Transaksi Pekan Ini</h2>
-          <button onclick="exportFridayPDF()" class="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100 flex items-center gap-1">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-            Export PDF
-          </button>
+          <div class="relative">
+            <button onclick="toggleFridayExportMenu()" class="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100 flex items-center gap-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+              <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="fridayExportMenu" class="hidden absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-xl border z-50 overflow-hidden">
+              <div class="p-1.5 space-y-0.5">
+                <button onclick="exportFridayPDF(); toggleFridayExportMenu();" class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 rounded flex items-center gap-2">
+                  <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  PDF
+                </button>
+                <button onclick="exportFridayExcel(); toggleFridayExportMenu();" class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-green-50 rounded flex items-center gap-2">
+                  <svg class="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  EXCEL
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left">
@@ -743,7 +758,28 @@
       <div class="bg-white rounded-xl shadow-sm overflow-hidden">
         <div class="p-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <h2 class="font-bold text-gray-800">Catatan Infak Tarawih (30 Malam)</h2>
-          <button onclick="resetRamadhanData()" class="text-xs text-red-600 hover:text-red-700 font-medium self-start sm:self-auto">Reset Data</button>
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <button onclick="toggleRamadhanExportMenu()" class="text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg font-medium hover:bg-amber-100 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export
+                <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div id="ramadhanExportMenu" class="hidden absolute top-full right-0 mt-2 w-32 bg-white rounded-lg shadow-xl border z-50 overflow-hidden">
+                <div class="p-1.5 space-y-0.5">
+                  <button onclick="exportRamadhanPDF(); toggleRamadhanExportMenu();" class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-red-50 rounded flex items-center gap-2">
+                    <svg class="w-4 h-4 text-red-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    PDF
+                  </button>
+                  <button onclick="exportRamadhanExcel(); toggleRamadhanExportMenu();" class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-green-50 rounded flex items-center gap-2">
+                    <svg class="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    EXCEL
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button onclick="resetRamadhanData()" class="text-xs text-red-600 hover:text-red-700 font-medium self-start sm:self-auto">Reset Data</button>
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm text-left">
@@ -1840,6 +1876,14 @@
       document.getElementById('exportMenu').classList.toggle('hidden');
     }
 
+    function toggleFridayExportMenu() {
+      document.getElementById('fridayExportMenu').classList.toggle('hidden');
+    }
+
+    function toggleRamadhanExportMenu() {
+      document.getElementById('ramadhanExportMenu').classList.toggle('hidden');
+    }
+
     // ==================== CORE LOGIC ====================
     
     function transactionSearchIndex(t) {
@@ -2788,6 +2832,65 @@
       doc.save(`Laporan_Jumat_${settings.mosque_name}_${sStr}.pdf`);
     }
 
+    function exportFridayExcel() {
+      const fri = new Date(currentFriday);
+      const thu = new Date(currentFriday);
+      thu.setDate(fri.getDate() + 6);
+      const sStr = toLocalDateStr(fri);
+      const eStr = toLocalDateStr(thu);
+
+      const periodLabel = formatPeriodLabelFull(sStr, eStr);
+
+      const prevTrans = transactions.filter(t => t.date < sStr);
+      const initBal = prevTrans.reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
+      const weekTrans = transactions.filter(t => t.date >= sStr && t.date <= eStr).sort((a, b) => new Date(a.date) - new Date(b.date));
+      const inc = weekTrans.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      const exp = weekTrans.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      const final = initBal + inc - exp;
+
+      const ws_data = [
+        [settings.mosque_name.toUpperCase()],
+        [settings.mosque_address],
+        [],
+        ['LAPORAN PEKAN JUMAT'],
+        [`Periode: ${periodLabel}`],
+        [],
+        ['RINGKASAN KEUANGAN'],
+        ['Saldo Awal', 'Total Pemasukan', 'Total Pengeluaran', 'Saldo Akhir'],
+        [initBal, inc, exp, final],
+        [],
+        ['No', 'Tanggal', 'Keterangan', 'Pemasukan', 'Pengeluaran']
+      ];
+
+      weekTrans.forEach((t, i) => {
+        ws_data.push([
+          i + 1,
+          t.date,
+          t.description,
+          t.type === 'income' ? t.amount : '',
+          t.type === 'expense' ? t.amount : ''
+        ]);
+      });
+      ws_data.push(['', '', 'TOTAL PEKAN', inc, exp]);
+
+      const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const city = settings.city || 'Kota';
+
+      ws_data.push([]);
+      ws_data.push(['', '', `${city}, ${today}`]);
+      ws_data.push([]);
+      ws_data.push(['Ketua Takmir,', '', 'Bendahara,']);
+      ws_data.push([]);
+      ws_data.push([]);
+      ws_data.push([`( ${settings.ketua || '___________________'} )`, '', `( ${settings.bendahara || '___________________'} )`]);
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(wb, ws, "Laporan Jumat");
+      XLSX.writeFile(wb, `Laporan_Jumat_${settings.mosque_name}_${sStr}.xlsx`);
+    }
+
     // ==================== REKAP BULANAN LOGIC ====================
     function showRekapModal() {
       document.getElementById('rekapModal').classList.remove('hidden');
@@ -3397,6 +3500,96 @@
       saveRamadhan();
       renderRamadhanPage();
       showToast('Data Ramadhan direset.', 'info');
+    }
+
+    function exportRamadhanPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const filledEntries = ramadhanEntries.filter(e => Number(e.jumlah) > 0);
+      const total = filledEntries.reduce((s, e) => s + (Number(e.jumlah) || 0), 0);
+
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text(settings.mosque_name.toUpperCase(), 105, 15, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(settings.mosque_address || '', 105, 21, { align: 'center' });
+
+      doc.setFontSize(13);
+      doc.setFont(undefined, 'bold');
+      doc.text('LAPORAN INFAK SHOLAT TARAWIH RAMADHAN', 105, 32, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Total Terkumpul: ${formatRupiah(total)}  |  Malam Terisi: ${filledEntries.length} / 30`, 105, 39, { align: 'center' });
+
+      doc.autoTable({
+        startY: 46,
+        head: [['Malam', 'Tanggal', 'Jumlah Infak', 'Catatan']],
+        body: ramadhanEntries.map(e => [
+          e.malam,
+          e.tanggal ? formatDateTable(e.tanggal) : '-',
+          Number(e.jumlah) > 0 ? formatRupiah(Number(e.jumlah)) : '-',
+          e.catatan || '-'
+        ]),
+        foot: [['', '', 'TOTAL', formatRupiah(total)]],
+        theme: 'grid',
+        headStyles: { fillColor: [217, 119, 6] },
+        footStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold' },
+        styles: { fontSize: 9 }
+      });
+
+      const finalY = doc.lastAutoTable.finalY + 15;
+      const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const city = settings.city || 'Kota';
+      doc.setFontSize(10);
+      doc.text(`${city}, ${today}`, 150, finalY, { align: 'center' });
+      doc.text('Bendahara,', 150, finalY + 6, { align: 'center' });
+      doc.text(`( ${settings.bendahara || '___________________'} )`, 150, finalY + 26, { align: 'center' });
+
+      doc.save(`Laporan_Ramadhan_${settings.mosque_name}_${toLocalDateStr(new Date())}.pdf`);
+    }
+
+    function exportRamadhanExcel() {
+      const filledEntries = ramadhanEntries.filter(e => Number(e.jumlah) > 0);
+      const total = filledEntries.reduce((s, e) => s + (Number(e.jumlah) || 0), 0);
+
+      const ws_data = [
+        [settings.mosque_name.toUpperCase()],
+        [settings.mosque_address],
+        [],
+        ['LAPORAN INFAK SHOLAT TARAWIH RAMADHAN'],
+        [`Total Terkumpul: ${total}  |  Malam Terisi: ${filledEntries.length} / 30`],
+        [],
+        ['Malam', 'Tanggal', 'Jumlah Infak', 'Catatan']
+      ];
+
+      ramadhanEntries.forEach(e => {
+        ws_data.push([
+          e.malam,
+          e.tanggal || '',
+          Number(e.jumlah) || 0,
+          e.catatan || ''
+        ]);
+      });
+      ws_data.push(['', '', total, 'TOTAL']);
+
+      const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const city = settings.city || 'Kota';
+
+      ws_data.push([]);
+      ws_data.push(['', `${city}, ${today}`]);
+      ws_data.push([]);
+      ws_data.push(['Bendahara,']);
+      ws_data.push([]);
+      ws_data.push([]);
+      ws_data.push([`( ${settings.bendahara || '___________________'} )`]);
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      ws['!cols'] = [{ wch: 8 }, { wch: 14 }, { wch: 16 }, { wch: 30 }];
+      XLSX.utils.book_append_sheet(wb, ws, "Laporan Ramadhan");
+      XLSX.writeFile(wb, `Laporan_Ramadhan_${settings.mosque_name}_${toLocalDateStr(new Date())}.xlsx`);
     }
 
     function loadSettingsForm() {
