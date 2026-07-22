@@ -890,7 +890,7 @@
               Tes Koneksi
             </button>
             <button type="button" onclick="manualSyncNow()" class="px-6 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition text-sm">
-              Sinkron Sekarang
+              Tarik Data Terbaru
             </button>
           </div>
         </form>
@@ -1644,44 +1644,65 @@
       if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
 
       clearTimeout(sheetsSyncTimers[collectionName]);
-      sheetsSyncTimers[collectionName] = setTimeout(async () => {
-        // PENTING: ambil data TERKINI di sini, tepat saat pengiriman benar-benar jalan --
-        // bukan data yang "dibekukan" 1 detik lalu saat pengiriman ini pertama dijadwalkan.
-        // Ini mencegah data lama (misal kategori sementara sebelum data asli sempat ditarik
-        // dari Sheets) menimpa balik data baru yang sudah benar masuk di detik-detik terakhir.
-        const items = getCurrentCollectionData(collectionName);
-
-        // Pengaman: saveCollection di Apps Script menimpa SELURUH isi sheet (bukan per-baris).
-        // Data yang sudah pernah terisi (transaksi, kategori, Ramadhan) pada penggunaan nyata
-        // praktis tidak pernah tiba-tiba menjadi benar-benar kosong -- kalau ini terjadi,
-        // kemungkinan besar itu gejala bug sesaat (race condition/loading), bukan keinginan
-        // sengaja menghapus semuanya. Tolak pengiriman kalau ada indikasi data hilang tiba-tiba,
-        // supaya tidak diam-diam menghapus data asli yang sudah tersimpan di Sheets.
-        const lastKnownCount = lastNonEmptyCollectionCount[collectionName] || 0;
-        if ((!items || items.length === 0) && lastKnownCount > 0) {
-          console.warn(`Menolak mengirim daftar ${collectionName} KOSONG ke Google Sheets (sebelumnya ada ${lastKnownCount} data -- mencegah kemungkinan penghapusan data tidak sengaja). Muat ulang halaman kalau data ini memang seharusnya dikosongkan.`);
-          return;
-        }
-        if (items && items.length > 0) {
-          lastNonEmptyCollectionCount[collectionName] = items.length;
-        }
-
-        const cfg = getSheetsConfig();
-        setSyncStatus('syncing');
-        try {
-          const res = await fetch(cfg.url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'saveCollection', collection: collectionName, items })
-          });
-          const data = await res.json();
-          setSyncStatus(data.success ? 'connected' : 'error');
-        } catch (e) {
-          console.error(`Sinkron ${collectionName} ke Google Sheets gagal (tidak masalah, data lokal tetap aman):`, e);
-          setSyncStatus('error');
-        }
+      sheetsSyncTimers[collectionName] = setTimeout(() => {
+        delete sheetsSyncTimers[collectionName];
+        executeCollectionPush(collectionName);
       }, 1000);
     }
+
+    async function executeCollectionPush(collectionName) {
+      // PENTING: ambil data TERKINI di sini, tepat saat pengiriman benar-benar jalan --
+      // bukan data yang "dibekukan" 1 detik lalu saat pengiriman ini pertama dijadwalkan.
+      // Ini mencegah data lama (misal kategori sementara sebelum data asli sempat ditarik
+      // dari Sheets) menimpa balik data baru yang sudah benar masuk di detik-detik terakhir.
+      const items = getCurrentCollectionData(collectionName);
+
+      // Pengaman: saveCollection di Apps Script menimpa SELURUH isi sheet (bukan per-baris).
+      // Data yang sudah pernah terisi (transaksi, kategori, Ramadhan) pada penggunaan nyata
+      // praktis tidak pernah tiba-tiba menjadi benar-benar kosong -- kalau ini terjadi,
+      // kemungkinan besar itu gejala bug sesaat (race condition/loading), bukan keinginan
+      // sengaja menghapus semuanya. Tolak pengiriman kalau ada indikasi data hilang tiba-tiba,
+      // supaya tidak diam-diam menghapus data asli yang sudah tersimpan di Sheets.
+      const lastKnownCount = lastNonEmptyCollectionCount[collectionName] || 0;
+      if ((!items || items.length === 0) && lastKnownCount > 0) {
+        console.warn(`Menolak mengirim daftar ${collectionName} KOSONG ke Google Sheets (sebelumnya ada ${lastKnownCount} data -- mencegah kemungkinan penghapusan data tidak sengaja). Muat ulang halaman kalau data ini memang seharusnya dikosongkan.`);
+        return;
+      }
+      if (items && items.length > 0) {
+        lastNonEmptyCollectionCount[collectionName] = items.length;
+      }
+
+      const cfg = getSheetsConfig();
+      setSyncStatus('syncing');
+      try {
+        const res = await fetch(cfg.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveCollection', collection: collectionName, items })
+        });
+        const data = await res.json();
+        setSyncStatus(data.success ? 'connected' : 'error');
+      } catch (e) {
+        console.error(`Sinkron ${collectionName} ke Google Sheets gagal (tidak masalah, data lokal tetap aman):`, e);
+        setSyncStatus('error');
+      }
+    }
+
+    // PENGAMAN KHUSUS HP: begitu tab disembunyikan (dikunci layarnya / pindah aplikasi lain),
+    // browser mobile sering menunda/menghentikan sementara proses yang berjalan di tab itu --
+    // termasuk pengiriman yang baru dijadwalkan (masih menunggu jeda 1 detik di atas). Ini
+    // membuat data yang baru diinput bisa "menggantung" tidak pernah benar-benar terkirim,
+    // walau indikator status masih menampilkan status terakhir yang berhasil (dari sebelumnya).
+    // Begitu terdeteksi tab akan disembunyikan, langsung paksa kirim semua yang masih tertunda.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        Object.keys(sheetsSyncTimers).forEach(collectionName => {
+          clearTimeout(sheetsSyncTimers[collectionName]);
+          delete sheetsSyncTimers[collectionName];
+          executeCollectionPush(collectionName);
+        });
+      }
+    });
 
     async function pushSettingsToSheets(settingsObj) {
       if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
@@ -1798,12 +1819,18 @@
         showToast('Isi dan simpan konfigurasi Google Sheets terlebih dahulu.', 'error');
         return;
       }
-      showToast('Menyinkronkan data...', 'info');
-      pushCollectionToSheets('transactions');
-      pushCollectionToSheets('categories');
-      pushCollectionToSheets('ramadhan');
-      await pushSettingsToSheets(settings);
-      showToast('Sinkronisasi selesai', 'success');
+      showToast('Menarik data terbaru dari Google Sheets...', 'info');
+      const success = await pullAllFromSheets();
+      if (success) {
+        try {
+          applyFilter();
+          updateHeader();
+          renderDropdowns();
+        } catch (e) { /* halaman aktif mungkin tidak butuh refresh ini, aman diabaikan */ }
+        showToast('Data terbaru berhasil ditarik', 'success');
+      } else {
+        showToast('Gagal menarik data terbaru. Cek koneksi internet.', 'error');
+      }
     }
 
     function initApp() {
