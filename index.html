@@ -1137,7 +1137,8 @@
       ramadhan: 'masjid_v2_ramadhan',
       ramadhanMeta: 'masjid_v2_ramadhan_meta',
       session: 'masjid_v2_session',
-      license: 'masjid_v2_license'
+      license: 'masjid_v2_license',
+      dirty: 'masjid_v2_dirty'
     };
 
     // Server Lisensi Pusat — HANYA dikontrol oleh penjual aplikasi, buyer tidak pernah menyentuh ini
@@ -1620,7 +1621,48 @@
       return [];
     }
 
+    // ==================== PENANDA "DATA BELUM TERKIRIM" (dirty tracking) ====================
+    // Melacak koleksi mana (transaksi/kategori/ramadhan) yang punya perubahan lokal yang
+    // belum PASTI berhasil terkirim ke Sheets -- supaya kita tahu harus mengirim dulu SEBELUM
+    // menarik data baru (menarik data baru bisa menimpa perubahan lokal yang belum terkirim).
+    function markDirty(collectionName) {
+      try {
+        const dirty = JSON.parse(localStorage.getItem(STORAGE.dirty) || '{}');
+        dirty[collectionName] = true;
+        localStorage.setItem(STORAGE.dirty, JSON.stringify(dirty));
+      } catch (e) {}
+    }
+
+    function clearDirty(collectionName) {
+      try {
+        const dirty = JSON.parse(localStorage.getItem(STORAGE.dirty) || '{}');
+        delete dirty[collectionName];
+        localStorage.setItem(STORAGE.dirty, JSON.stringify(dirty));
+      } catch (e) {}
+    }
+
+    function getDirtyCollections() {
+      try {
+        return Object.keys(JSON.parse(localStorage.getItem(STORAGE.dirty) || '{}'));
+      } catch (e) { return []; }
+    }
+
+    async function flushDirtyCollections() {
+      const dirty = getDirtyCollections();
+      for (const collectionName of dirty) {
+        await executeCollectionPush(collectionName);
+      }
+    }
+
+    // Begitu koneksi internet kembali menyala (device sempat offline), langsung coba kirim
+    // semua perubahan lokal yang masih tertunda -- tidak perlu menunggu user klik apapun.
+    window.addEventListener('online', () => {
+      console.log('Koneksi internet kembali -- mencoba mengirim perubahan lokal yang tertunda...');
+      flushDirtyCollections();
+    });
+
     function pushCollectionToSheets(collectionName) {
+      markDirty(collectionName); // tandai dulu -- baru dihapus tandanya kalau BENAR-BENAR berhasil terkirim
       if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
 
       clearTimeout(sheetsSyncTimers[collectionName]);
@@ -1662,6 +1704,7 @@
         });
         const data = await res.json();
         setSyncStatus(data.success ? 'connected' : 'error');
+        if (data.success) clearDirty(collectionName);
       } catch (e) {
         console.error(`Sinkron ${collectionName} ke Google Sheets gagal (tidak masalah, data lokal tetap aman):`, e);
         setSyncStatus('error');
@@ -1746,6 +1789,11 @@
     }
 
     async function pullAndRefreshFromSheets() {
+      // PENTING: kirim dulu perubahan lokal yang masih tertunda SEBELUM menarik data baru --
+      // supaya proses "menarik data baru" tidak menimpa/menghapus perubahan lokal yang belum
+      // sempat sampai ke Sheets (misalnya transaksi yang diinput saat offline kemarin).
+      await flushDirtyCollections();
+
       const success = await pullAllFromSheets();
       if (success) {
         try {
@@ -1762,6 +1810,8 @@
         return;
       }
       showToast('Menarik data terbaru dari Google Sheets...', 'info');
+      // Kirim dulu perubahan lokal yang tertunda, supaya tidak tertimpa oleh proses tarik data ini
+      await flushDirtyCollections();
       const success = await pullAllFromSheets();
       if (success) {
         try {
