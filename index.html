@@ -389,7 +389,7 @@
             <div>
               <label class="block text-xs font-semibold text-gray-500 mb-1">Kategori Pengeluaran</label>
               <select id="filterExpenseCategory" onchange="applyFilter()" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 text-sm outline-none">
-                <option value="">Semua Kategori</option>
+                <option value="">Semua Kategori Pengeluaran</option>
               </select>
             </div>
             
@@ -1138,7 +1138,8 @@
       ramadhanMeta: 'masjid_v2_ramadhan_meta',
       session: 'masjid_v2_session',
       license: 'masjid_v2_license',
-      dirty: 'masjid_v2_dirty'
+      dirty: 'masjid_v2_dirty',
+      pulledOnce: 'masjid_v2_pulled_once'
     };
 
     // Server Lisensi Pusat — HANYA dikontrol oleh penjual aplikasi, buyer tidak pernah menyentuh ini
@@ -1182,7 +1183,14 @@
 
     // ==================== INITIALIZATION ====================
     window.onload = () => {
+      // Minta browser menjaga penyimpanan lokal agar tidak dihapus otomatis (diam-diam, tanpa
+      // tampilan apapun). Mengurangi risiko tiba-tiba "logout sendiri" karena data situs dibersihkan.
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
       const session = getStoredSession();
+      // Device lama yang sudah login sebelum pembaruan ini isinya data asli -> langsung dipercaya.
+      // Device baru (belum ada sesi) baru dipercaya setelah berhasil menarik data dari Sheets.
+      if (session && session.active && !isDeviceTrusted()) markDeviceTrusted();
       if (session && session.active) {
         enterApp(session);
       } else {
@@ -1464,7 +1472,7 @@
           return;
         }
 
-        saveSettingsData();
+        localStorage.setItem(STORAGE.settings, JSON.stringify(settings)); // lokal saja -- jangan kirim nilai default ke Sheets
 
         const session = { active: true, email: data.email, name: data.name };
         localStorage.setItem(STORAGE.session, JSON.stringify(session));
@@ -1515,7 +1523,7 @@
           return;
         }
 
-        saveSettingsData();
+        localStorage.setItem(STORAGE.settings, JSON.stringify(settings)); // lokal saja -- jangan kirim nilai default ke Sheets
 
         const session = { active: true, email: data.email, name: data.name };
         localStorage.setItem(STORAGE.session, JSON.stringify(session));
@@ -1554,7 +1562,7 @@
         const r = localStorage.getItem(STORAGE.ramadhan);
         const rm = localStorage.getItem(STORAGE.ramadhanMeta);
         if (t) transactions = JSON.parse(t);
-        if (c) categories = JSON.parse(c); else { categories = [...DEFAULT_CATS]; saveCats(); }
+        if (c) categories = JSON.parse(c); else { categories = [...DEFAULT_CATS]; localStorage.setItem(STORAGE.cats, JSON.stringify(categories)); }
         if (s) settings = { ...settings, ...JSON.parse(s) };
         if (r) ramadhanEntries = JSON.parse(r);
         if (rm) ramadhanMeta = { ...ramadhanMeta, ...JSON.parse(rm) };
@@ -1578,6 +1586,7 @@
     }
     function saveSettingsData() {
       localStorage.setItem(STORAGE.settings, JSON.stringify(settings));
+      markDirty('settings');
       pushSettingsToSheets(settings);
     }
 
@@ -1647,10 +1656,26 @@
       } catch (e) { return []; }
     }
 
+    // ==================== "KEPERCAYAAN" DEVICE ====================
+    // Device yang BARU (belum pernah berhasil menarik data dari Sheets) isinya hanyalah nilai
+    // bawaan/default -- BUKAN data asli masjid. Device seperti ini TIDAK BOLEH mengirim apapun
+    // ke Sheets sebelum menarik data asli dulu, kalau tidak nilai default-nya akan menimpa data
+    // asli (nama masjid, kategori, dsb) yang tersimpan di Sheets.
+    function isDeviceTrusted() {
+      return localStorage.getItem(STORAGE.pulledOnce) === 'true';
+    }
+    function markDeviceTrusted() {
+      try { localStorage.setItem(STORAGE.pulledOnce, 'true'); } catch (e) {}
+    }
+
     async function flushDirtyCollections() {
       const dirty = getDirtyCollections();
       for (const collectionName of dirty) {
-        await executeCollectionPush(collectionName);
+        if (collectionName === 'settings') {
+          await pushSettingsToSheets(settings);
+        } else {
+          await executeCollectionPush(collectionName);
+        }
       }
     }
 
@@ -1664,6 +1689,7 @@
     function pushCollectionToSheets(collectionName) {
       markDirty(collectionName); // tandai dulu -- baru dihapus tandanya kalau BENAR-BENAR berhasil terkirim
       if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
+      if (!isDeviceTrusted()) return; // device baru: tarik data asli dulu sebelum boleh mengirim apapun
 
       clearTimeout(sheetsSyncTimers[collectionName]);
       sheetsSyncTimers[collectionName] = setTimeout(() => {
@@ -1673,6 +1699,7 @@
     }
 
     async function executeCollectionPush(collectionName) {
+      if (!isDeviceTrusted()) return; // pengaman berlapis: device baru tidak boleh mengirim data default
       // PENTING: ambil data TERKINI di sini, tepat saat pengiriman benar-benar jalan --
       // bukan data yang "dibekukan" 1 detik lalu saat pengiriman ini pertama dijadwalkan.
       // Ini mencegah data lama (misal kategori sementara sebelum data asli sempat ditarik
@@ -1729,6 +1756,7 @@
 
     async function pushSettingsToSheets(settingsObj) {
       if (!isSheetsConfigured()) { setSyncStatus('local'); return; }
+      if (!isDeviceTrusted()) return; // device baru: jangan timpa pengaturan asli di Sheets dengan nilai default
       const cfg = getSheetsConfig();
       try {
         const res = await fetch(cfg.url, {
@@ -1738,6 +1766,7 @@
         });
         const data = await res.json();
         setSyncStatus(data.success ? 'connected' : 'error');
+        if (data.success) clearDirty('settings');
       } catch (e) {
         console.error('Sinkron pengaturan ke Google Sheets gagal (tidak masalah, data lokal tetap aman):', e);
         setSyncStatus('error');
@@ -1779,6 +1808,17 @@
           localStorage.setItem(STORAGE.ramadhan, JSON.stringify(ramadhanEntries));
           lastNonEmptyCollectionCount.ramadhan = ramadhanEntries.length;
         }
+
+        // Berhasil menarik data asli dari Sheets -> device ini sekarang boleh mengirim data.
+        markDeviceTrusted();
+
+        // Inisialisasi pertama: HANYA kalau di Sheets memang masih kosong (masjid baru), isi dengan
+        // nilai awal. Aman karena tidak ada data asli yang bisa tertimpa.
+        const sheetCatsEmpty = !Array.isArray(data.data.categories) || data.data.categories.length === 0;
+        if (sheetCatsEmpty && categories.length > 0) pushCollectionToSheets('categories');
+        const sheetSettingsEmpty = !data.data.settings || Object.keys(data.data.settings).length === 0;
+        if (sheetSettingsEmpty) pushSettingsToSheets(settings);
+
         setSyncStatus('connected');
         return true;
       } catch (e) {
@@ -2218,7 +2258,7 @@
       const filterExpenseCatSelect = document.getElementById('filterExpenseCategory');
       const currFilterExpenseCat = filterExpenseCatSelect.value;
       const expenseCats = categories.filter(c => c.type === 'expense');
-      filterExpenseCatSelect.innerHTML = '<option value="">Semua Kategori</option>' + expenseCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      filterExpenseCatSelect.innerHTML = '<option value="">Semua Kategori Pengeluaran</option>' + expenseCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
       if(currFilterExpenseCat) filterExpenseCatSelect.value = currFilterExpenseCat;
     }
     
